@@ -1,62 +1,75 @@
 "use client";
 
-interface UACProps {
+interface UACPopupProps {
   appName: string;
+  publisher?: string;
+  description?: string;
   onContinue: () => void;
   onCancel: () => void;
 }
 
-export default function UACPopup({ appName, onContinue, onCancel }: UACProps) {
+export default function UACPopup({
+  appName,
+  publisher = 'Microsoft Windows',
+  description = 'A protected application is requesting elevated privileges.',
+  onContinue,
+  onCancel,
+}: UACPopupProps) {
   return (
-    <div className="fixed inset-0 z-[200000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      {/* THE DIALOG BOX */}
-      <div className="w-[450px] bg-[#f0f0f0] border border-gray-500 shadow-[0_0_20px_rgba(0,0,0,0.5)] rounded-md overflow-hidden font-sans">
-        
-        {/* Blue Header */}
-        <div className="bg-[#005a9e] p-3 flex items-center gap-3">
-          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-xl">🛡️</div>
-          <span className="text-white text-sm font-semibold">User Account Control</span>
-        </div>
-
-        {/* Body Content */}
-        <div className="p-6 bg-white flex gap-4">
-          <div className="text-4xl">🛡️</div>
-          <div className="flex flex-col gap-3">
-            <h2 className="text-blue-900 font-bold text-lg leading-tight">
-              Windows needs your permission to continue
-            </h2>
-            <p className="text-xs text-gray-600">
-              If you started this action, continue.
-            </p>
-            
-            <div className="mt-2 p-3 border border-gray-200 bg-gray-50 rounded flex flex-col">
-              <span className="text-[10px] uppercase text-gray-500 font-bold">Program Name</span>
-              <span className="text-sm font-bold text-gray-800">{appName}</span>
-              <span className="text-[10px] uppercase text-gray-500 font-bold mt-2">Verified Publisher</span>
-              <span className="text-sm text-gray-800">Irie Voss Ultimate Edition</span>
+    <div className="fixed inset-0 z-[250000] flex items-center justify-center bg-[radial-gradient(circle,rgba(6,16,28,0.15),rgba(0,0,0,0.82))] backdrop-blur-[2px]">
+      <div className="absolute inset-0 bg-black/35" />
+      <div className="relative w-[520px] overflow-hidden rounded-[12px] border border-[#27384f] bg-[#f8f8f8] shadow-[0_26px_80px_rgba(0,0,0,0.7)]">
+        <div className="border-b border-[#103b63] bg-[linear-gradient(180deg,#376d9d_0%,#154a78_100%)] px-5 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/10 text-xl">🛡️</div>
+            <div>
+              <div className="text-sm font-semibold">User Account Control</div>
+              <div className="text-[11px] text-white/70">Secure Desktop</div>
             </div>
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="bg-[#f0f0f0] p-4 flex justify-end gap-2 border-t border-gray-300">
-          <button 
-            onClick={onContinue}
-            className="px-8 py-1.5 border border-gray-400 bg-gradient-to-b from-white to-gray-200 hover:brightness-105 active:shadow-inner rounded-sm text-xs font-bold text-gray-800 shadow-sm"
-          >
-            Continue
-          </button>
-          <button 
-            onClick={onCancel}
-            className="px-8 py-1.5 border border-gray-400 bg-gradient-to-b from-white to-gray-200 hover:brightness-105 active:shadow-inner rounded-sm text-xs text-gray-800 shadow-sm"
-          >
-            Cancel
-          </button>
+        <div className="flex gap-4 bg-white px-6 py-6 text-slate-800">
+          <div className="mt-1 text-5xl">🛡️</div>
+          <div className="flex-1">
+            <h2 className="text-[22px] font-semibold leading-7 text-[#063e77]">Windows needs your permission to continue</h2>
+            <p className="mt-2 text-sm text-slate-600">{description}</p>
+
+            <div className="mt-5 rounded-[8px] border border-[#c9d1db] bg-[#f4f7fb] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <div className="grid gap-3 text-sm">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Program Name</div>
+                  <div className="mt-1 font-semibold text-slate-800">{appName}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Verified Publisher</div>
+                  <div className="mt-1 text-slate-800">{publisher}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 text-[11px] text-slate-500">Secure Desktop is dimming the shell until you choose an option.</div>
+          </div>
         </div>
 
-        {/* Details arrow */}
-        <div className="px-4 pb-2 bg-[#f0f0f0] text-[10px] text-blue-700 hover:underline cursor-pointer flex items-center gap-1">
-          <span>▶</span> Details
+        <div className="flex items-center justify-between border-t border-[#d0d6df] bg-[linear-gradient(180deg,#f7f7f7_0%,#e8ebef_100%)] px-5 py-4">
+          <button type="button" className="text-[11px] text-[#2c5d8f] hover:underline">Show details</button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onContinue}
+              className="rounded-[4px] border border-[#778ba0] bg-[linear-gradient(180deg,#ffffff_0%,#dfe6ee_100%)] px-7 py-1.5 text-xs font-semibold text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] hover:brightness-105"
+            >
+              Continue
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-[4px] border border-[#778ba0] bg-[linear-gradient(180deg,#ffffff_0%,#dfe6ee_100%)] px-7 py-1.5 text-xs text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] hover:brightness-105"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>

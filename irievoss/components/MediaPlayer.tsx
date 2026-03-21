@@ -1,80 +1,129 @@
 "use client";
-import { useState } from 'react';
 
-export default function MediaPlayer({ file }: any) {
+import { useEffect, useRef, useState } from 'react';
+import type { VistaVideoNode } from '@/lib/vista/filesystem';
+
+export default function MediaPlayer({ file }: { file: VistaVideoNode | null }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [failed, setFailed] = useState(false);
 
-  // If no file is passed, show the "Library" state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const sync = () => {
+      const nextProgress = video.duration ? (video.currentTime / video.duration) * 100 : 0;
+      setProgress(nextProgress);
+      setPlaying(!video.paused);
+    };
+
+    sync();
+    video.addEventListener('timeupdate', sync);
+    video.addEventListener('play', sync);
+    video.addEventListener('pause', sync);
+
+    return () => {
+      video.removeEventListener('timeupdate', sync);
+      video.removeEventListener('play', sync);
+      video.removeEventListener('pause', sync);
+    };
+  }, [file]);
+
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      void video.play();
+    } else {
+      video.pause();
+    }
+  };
+
   if (!file) {
     return (
-      <div className="flex flex-col h-full bg-[#00050a] text-white font-sans overflow-hidden">
-        <div className="flex-1 flex flex-col items-center justify-center border-b border-white/5 bg-gradient-to-b from-blue-900/20 to-black">
-          <div className="w-32 h-32 bg-blue-600/20 rounded-full border border-blue-500/50 flex items-center justify-center animate-pulse">
-            <span className="text-6xl">🎵</span>
+      <div className="flex h-full flex-col overflow-hidden bg-[linear-gradient(180deg,#0a2138_0%,#02060b_100%)] text-white">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-[radial-gradient(circle_at_center,rgba(36,120,212,0.2),transparent_55%)]">
+          <div className="flex h-30 w-30 items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-300/10 text-6xl shadow-[0_0_50px_rgba(73,188,255,0.2)]">🎵</div>
+          <div className="text-center">
+            <div className="text-lg font-light">Windows Media Player 11</div>
+            <div className="mt-1 text-sm text-white/60">Open a local video from the recursive file system.</div>
           </div>
-          <p className="mt-4 text-gray-400 text-sm italic">Select a clip from the D: Drive to play</p>
         </div>
-        <MediaControls playing={playing} setPlaying={setPlaying} title="Windows Media Player" />
+        <PlayerChrome playing={false} progress={20} title="Library" subtitle="Now Playing" onToggle={togglePlayback} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-black text-white font-sans overflow-hidden">
-      {/* VIDEO AREA */}
-      <div className="flex-1 relative group bg-black flex items-center justify-center">
-        <video 
-          src={file.url || ""} 
-          className="w-full h-full object-contain"
-          autoPlay
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-        />
-        
-        {!playing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-             <button onClick={() => setPlaying(true)} className="text-6xl opacity-70 hover:opacity-100 transition-opacity">▶</button>
+    <div className="flex h-full flex-col overflow-hidden bg-[linear-gradient(180deg,#10161e_0%,#030608_100%)] text-white">
+      <div className="flex h-14 items-center justify-between border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.03))] px-5 text-sm">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-cyan-300/70">Now Playing</div>
+          <div className="mt-1 font-semibold">{file.name}</div>
+        </div>
+        <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-cyan-100">WMP 11</div>
+      </div>
+
+      <div className="relative flex flex-1 items-center justify-center bg-black">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(58,167,255,0.24),transparent_30%)]" />
+        {!failed ? (
+          <video ref={videoRef} src={file.url} className="relative h-full w-full object-contain" autoPlay controls={false} onClick={togglePlayback} onError={() => setFailed(true)} />
+        ) : (
+          <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_center,rgba(72,173,255,0.28),transparent_45%)]">
+            <div className="text-7xl">🎞️</div>
+            <div className="text-center">
+              <div className="text-lg font-light">Preview unavailable in this environment</div>
+              <div className="mt-1 text-sm text-white/60">The local video entry is wired up, but playback fell back to shell chrome.</div>
+            </div>
           </div>
+        )}
+        {!playing && (
+          <button type="button" onClick={togglePlayback} className="absolute flex h-20 w-20 items-center justify-center rounded-full border border-white/30 bg-black/40 text-4xl text-white backdrop-blur-sm">
+            ▶
+          </button>
         )}
       </div>
 
-      {/* CONTROLS AREA */}
-      <MediaControls playing={playing} setPlaying={setPlaying} title={file.name} />
+      <PlayerChrome playing={playing} progress={failed ? 100 : progress} title={file.name} subtitle={failed ? 'Local asset fallback' : file.duration} onToggle={togglePlayback} />
     </div>
   );
 }
 
-function MediaControls({ playing, setPlaying, title }: any) {
+function PlayerChrome({
+  playing,
+  progress,
+  title,
+  subtitle,
+  onToggle,
+}: {
+  playing: boolean;
+  progress: number;
+  title: string;
+  subtitle: string;
+  onToggle: () => void;
+}) {
   return (
-    <div className="h-20 bg-gradient-to-b from-[#1a1c1e] to-[#0a0a0a] border-t border-white/10 p-2 flex flex-col gap-1">
-      {/* Progress Bar */}
-      <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-        <div className="w-1/3 h-full bg-gradient-to-r from-blue-600 to-cyan-400 shadow-[0_0_8px_cyan]" />
+    <div className="border-t border-white/10 bg-[linear-gradient(180deg,#242f3f_0%,#0d131b_100%)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+      <div className="h-2 overflow-hidden rounded-full bg-black/50 shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)]">
+        <div className="h-full bg-[linear-gradient(90deg,#52c5ff_0%,#d8fbff_100%)] shadow-[0_0_12px_rgba(91,218,255,0.8)]" style={{ width: `${progress}%` }} />
       </div>
-
-      <div className="flex justify-between items-center px-4 mt-1">
-        <div className="flex flex-col">
-          <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Now Playing</span>
-          <span className="text-xs font-medium truncate max-w-[150px]">{title}</span>
+      <div className="mt-3 flex items-center justify-between">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.28em] text-cyan-300/65">{subtitle}</div>
+          <div className="mt-1 text-sm font-medium">{title}</div>
         </div>
-
-        {/* Glossy Circular Controls */}
         <div className="flex items-center gap-3">
-          <button className="text-gray-400 hover:text-white transition-colors">⏮</button>
-          <button 
-            onClick={() => setPlaying(!playing)}
-            className="w-10 h-10 rounded-full bg-gradient-to-b from-blue-400 to-blue-700 border border-blue-900 flex items-center justify-center text-white shadow-lg hover:brightness-110 active:scale-95 transition-all"
-          >
+          <button type="button" className="text-lg text-white/65">⏮</button>
+          <button type="button" onClick={onToggle} className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-100/40 bg-[linear-gradient(180deg,#5cb8ff_0%,#0d5ca0_100%)] text-lg text-white shadow-[0_0_20px_rgba(72,175,255,0.45)]">
             {playing ? '⏸' : '▶'}
           </button>
-          <button className="text-gray-400 hover:text-white transition-colors">⏭</button>
+          <button type="button" className="text-lg text-white/65">⏭</button>
         </div>
-
-        <div className="flex items-center gap-4">
-           <div className="flex flex-col items-end">
-              <span className="text-[10px] text-gray-500">Volume</span>
-              <span className="text-xs">🔊 75%</span>
-           </div>
+        <div className="text-right text-xs text-white/60">
+          <div>🔊 75%</div>
+          <div className="text-[10px] uppercase tracking-[0.2em]">SRS WOW</div>
         </div>
       </div>
     </div>
