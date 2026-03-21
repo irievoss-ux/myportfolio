@@ -2,9 +2,8 @@
 import { Resend } from 'resend';
 import { cookies } from 'next/headers';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendEmail(data: { firstName: string; lastName: string; email: string; message: string; }) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const cookieStore = await cookies(); 
   const emailCountCookie = cookieStore.get('irie_email_count');
   const count = emailCountCookie ? parseInt(emailCountCookie.value, 10) : 0;

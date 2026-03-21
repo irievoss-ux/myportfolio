@@ -31,15 +31,20 @@ export default function MailWindow() {
   async function handleSend() {
     if (!firstName || !lastName || !email || !message) return;
     setStatus('sending');
-    const result = await sendEmail({ firstName, lastName, email, message });
-    if (result.success) {
-      setStatus('success');
-      setFirstName(''); setLastName(''); setEmail(''); setMessage('');
-      setTimeout(() => { setStatus('idle'); setView('sent'); }, 2000);
-    } else if (result.error === 'RATE_LIMIT') {
-      setStatus('limit');
-    } else {
-      setErrorMessage(result.error || 'SERVER_ERROR');
+    try {
+      const result = await sendEmail({ firstName, lastName, email, message });
+      if (result.success) {
+        setStatus('success');
+        setFirstName(''); setLastName(''); setEmail(''); setMessage('');
+        setTimeout(() => { setStatus('idle'); setView('sent'); }, 2000);
+      } else if (result.error === 'RATE_LIMIT') {
+        setStatus('limit');
+      } else {
+        setErrorMessage(result.error || 'SERVER_ERROR');
+        setStatus('error');
+      }
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Internal Server Error. Please check your Vercel logs.');
       setStatus('error');
     }
   }
