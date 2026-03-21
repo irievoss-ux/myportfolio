@@ -18,12 +18,18 @@ interface DragSource { pile: PileType; index: number; cardIndex: number; }
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 const suitColor = (s: Suit) => s === 'hearts' || s === 'diamonds' ? '#c0392b' : '#1a1a2e';
 const suitSymbol = (s: Suit) => ({ hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' }[s]);
-<<<<<<< HEAD
-const valueName = (v: CardValue) => (({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[v] || String(v));
-=======
 const FACE_CARD_NAMES: Partial<Record<CardValue, string>> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
 const valueName = (v: CardValue) => FACE_CARD_NAMES[v] ?? String(v);
->>>>>>> a90e4b5da17ae5b4057d848175c56dc7640df2bb
+
+const getTableauOffsets = (pile: Card[]) => {
+  const offsets: number[] = [];
+  let currentTop = 0;
+  for (let i = 0; i < pile.length; i++) {
+    offsets.push(currentTop);
+    currentTop += pile[i].faceUp ? 22 : 10;
+  }
+  return offsets;
+};
 
 function createDeck(): Card[] {
   const deck: Card[] = [];
@@ -115,6 +121,8 @@ export default function Solitaire() {
         sourceCards = [newGame.waste[newGame.waste.length - 1]];
       } else if (selected.pile === 'tableau') {
         sourceCards = newGame.tableau[selected.index].slice(selected.cardIndex);
+      } else if (selected.pile === 'foundation') {
+        sourceCards = [newGame.foundations[selected.index][newGame.foundations[selected.index].length - 1]];
       }
 
       if (sourceCards.length === 0) { setSelected(null); return g; }
@@ -135,6 +143,8 @@ export default function Solitaire() {
       if (success) {
         if (selected.pile === 'waste') {
           newGame.waste.pop();
+        } else if (selected.pile === 'foundation') {
+          newGame.foundations[selected.index].pop();
         } else if (selected.pile === 'tableau') {
           newGame.tableau[selected.index] = newGame.tableau[selected.index].slice(0, selected.cardIndex);
           // Flip top card if needed
@@ -156,6 +166,7 @@ export default function Solitaire() {
 
   // Auto-send to foundation on double-click
   const autoFoundation = (card: Card, sourcePile: PileType, sourceIndex: number) => {
+    setSelected(null);
     setGame(g => {
       const newGame = { ...g, stock: [...g.stock], waste: [...g.waste], foundations: g.foundations.map(f => [...f]), tableau: g.tableau.map(t => [...t]) };
       for (let fi = 0; fi < 4; fi++) {
@@ -221,20 +232,23 @@ export default function Solitaire() {
           {/* Foundations */}
           {game.foundations.map((f, fi) => (
             <div key={fi} onClick={() => handleSelect('foundation', fi, 0)}>
-              {f.length > 0 ? <CardFace card={f[f.length - 1]} /> : <EmptyPile label={suitSymbol(SUITS[fi])} />}
+              {f.length > 0 ? <CardFace card={f[f.length - 1]} isSelected={selected?.pile === 'foundation' && selected.index === fi} /> : <EmptyPile label={suitSymbol(SUITS[fi])} />}
             </div>
           ))}
         </div>
 
         {/* Tableau */}
         <div className="flex items-start gap-2">
-          {game.tableau.map((pile, ti) => (
-            <div key={ti} className="relative" style={{ width: 66, minHeight: 150 }}>
+          {game.tableau.map((pile, ti) => {
+            const offsets = getTableauOffsets(pile);
+            const colHeight = pile.length === 0 ? 90 : offsets[pile.length - 1] + 90;
+            return (
+            <div key={ti} className="relative" style={{ width: 66, height: colHeight, minHeight: 90 }}>
               {pile.length === 0 ? (
-                <div onClick={() => handleSelect('tableau', ti, 0)}><EmptyPile /></div>
+                <div onClick={() => handleSelect('tableau', ti, 0)} className="w-[66px] h-[90px]"><EmptyPile /></div>
               ) : (
                 pile.map((card, ci) => (
-                  <div key={card.id} className="absolute left-0" style={{ top: ci * (card.faceUp ? 22 : 10) }}
+                  <div key={card.id} className="absolute left-0" style={{ top: offsets[ci] }}
                     onClick={() => card.faceUp && handleSelect('tableau', ti, ci)}
                     onDoubleClick={() => card.faceUp && ci === pile.length - 1 && autoFoundation(card, 'tableau', ti)}>
                     {card.faceUp ? (
@@ -245,7 +259,7 @@ export default function Solitaire() {
                 ))
               )}
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </div>
