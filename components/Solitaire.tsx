@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 // Card types
 type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
@@ -18,7 +18,8 @@ interface DragSource { pile: PileType; index: number; cardIndex: number; }
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 const suitColor = (s: Suit) => s === 'hearts' || s === 'diamonds' ? '#c0392b' : '#1a1a2e';
 const suitSymbol = (s: Suit) => ({ hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' }[s]);
-const valueName = (v: CardValue) => ({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }[v] || String(v));
+const FACE_CARD_NAMES: Partial<Record<CardValue, string>> = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+const valueName = (v: CardValue) => FACE_CARD_NAMES[v] ?? String(v);
 
 function createDeck(): Card[] {
   const deck: Card[] = [];
@@ -66,12 +67,7 @@ function dealGame(): GameState {
 export default function Solitaire() {
   const [game, setGame] = useState<GameState>(() => dealGame());
   const [selected, setSelected] = useState<DragSource | null>(null);
-  const [won, setWon] = useState(false);
-
-  useEffect(() => {
-    const total = game.foundations.reduce((s, f) => s + f.length, 0);
-    if (total === 52) setWon(true);
-  }, [game.foundations]);
+  const won = game.foundations.reduce((s, f) => s + f.length, 0) === 52;
 
   const drawFromStock = useCallback(() => {
     setGame(g => {
@@ -185,7 +181,7 @@ export default function Solitaire() {
         <div className="ml-auto flex items-center gap-4 text-[10px]">
           <span>Score: {game.score}</span>
           <span>Moves: {game.moves}</span>
-          <button type="button" onClick={() => { setGame(dealGame()); setWon(false); setSelected(null); }}
+          <button type="button" onClick={() => { setGame(dealGame()); setSelected(null); }}
             className="rounded border border-white/20 bg-white/10 px-2 py-0.5 hover:bg-white/20">New Game</button>
         </div>
       </div>
@@ -195,7 +191,7 @@ export default function Solitaire() {
           <div className="rounded-lg bg-white p-8 text-center shadow-2xl">
             <div className="text-[24px] font-bold text-[#0a5e2f] mb-2">🏆 You Win!</div>
             <div className="text-sm text-slate-600 mb-4">Score: {game.score} · Moves: {game.moves}</div>
-            <button type="button" onClick={() => { setGame(dealGame()); setWon(false); setSelected(null); }}
+            <button type="button" onClick={() => { setGame(dealGame()); setSelected(null); }}
               className="rounded border border-[#0a5e2f] bg-[#0d7a3c] px-6 py-2 text-white font-semibold hover:brightness-110">Play Again</button>
           </div>
         </div>
