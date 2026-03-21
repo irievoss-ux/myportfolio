@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useVistaProfile } from './providers/VistaProfileProvider';
+import VistaIcon from '@/components/VistaIconMap';
+import { UserIcon } from '@/components/VistaIcons';
 
 interface ControlPanelProps {
   aeroColor: string;
@@ -14,12 +16,31 @@ interface ControlPanelProps {
 
 type ControlPanelView = 'home' | 'profile' | 'appearance' | 'system' | 'network';
 
-const avatarChoices = ['🌸', '🔥', '🎮', '🐱', '🌌', '💎', '⚡', '🦋'];
-const aeroChoices = ['teal', 'ruby', 'emerald', 'graphite'];
-const wallpaperChoices = ['aurora', 'meadow', 'twilight'];
+const avatarColorChoices = [
+  { id: 'blue', label: 'Blue', bg: 'bg-blue-500' },
+  { id: 'green', label: 'Green', bg: 'bg-green-500' },
+  { id: 'purple', label: 'Purple', bg: 'bg-purple-500' },
+  { id: 'red', label: 'Red', bg: 'bg-red-500' },
+  { id: 'orange', label: 'Orange', bg: 'bg-orange-500' },
+  { id: 'teal', label: 'Teal', bg: 'bg-teal-500' },
+  { id: 'pink', label: 'Pink', bg: 'bg-pink-500' },
+  { id: 'slate', label: 'Slate', bg: 'bg-slate-500' },
+];
+
+const aeroChoices = ['teal', 'ruby', 'emerald', 'graphite', 'amber', 'violet'];
+const wallpaperChoices = ['aurora', 'meadow', 'twilight', 'midnight', 'sunset'];
+
+const aeroColors: Record<string, string> = {
+  teal: 'bg-[#1a7a8a]',
+  ruby: 'bg-[#8a1a2a]',
+  emerald: 'bg-[#1a6a3a]',
+  graphite: 'bg-[#4a5a6a]',
+  amber: 'bg-[#8a6a1a]',
+  violet: 'bg-[#5a1a8a]',
+};
 
 export default function ControlPanel({ aeroColor, setAeroColor, wallpaper, setWallpaper, onOpenWindow, onOpenPath }: ControlPanelProps) {
-  const { userImage, userName, setUserImage, setUserName } = useVistaProfile();
+  const { userName, setUserName } = useVistaProfile();
   const [view, setView] = useState<ControlPanelView>('home');
 
   return (
@@ -49,16 +70,16 @@ export default function ControlPanel({ aeroColor, setAeroColor, wallpaper, setWa
           {view === 'home' && (
             <div className="grid gap-8">
               <button type="button" onClick={() => setView('system')} className="text-left">
-                <CategoryCard title="System and Maintenance" description="Open System Properties, Windows Experience Index, and admin tools." icon="🛡️" />
+                <CategoryCard title="System and Maintenance" description="Open System Properties, Windows Experience Index, and admin tools." iconKey="system" />
               </button>
               <button type="button" onClick={() => setView('profile')} className="text-left">
-                <CategoryCard title="User Accounts" description="Change your display name and picture across the shell." icon="👤" />
+                <CategoryCard title="User Accounts" description="Change your display name and picture across the shell." iconKey="user" />
               </button>
               <button type="button" onClick={() => setView('appearance')} className="text-left">
-                <CategoryCard title="Appearance and Personalization" description="Retune glass color and wallpaper ambiance." icon="🎨" />
+                <CategoryCard title="Appearance and Personalization" description="Retune glass color and wallpaper ambiance." iconKey="paint" />
               </button>
               <button type="button" onClick={() => setView('network')} className="text-left">
-                <CategoryCard title="Network and Internet" description="Launch Internet Explorer and Windows Mail shortcuts." icon="🌐" />
+                <CategoryCard title="Network and Internet" description="Launch Internet Explorer and Windows Mail shortcuts." iconKey="ie" />
               </button>
             </div>
           )}
@@ -66,7 +87,9 @@ export default function ControlPanel({ aeroColor, setAeroColor, wallpaper, setWa
           {view === 'profile' && (
             <div className="max-w-xl space-y-6">
               <div className="flex items-center gap-4 rounded-[14px] border border-[#d3dfeb] bg-[linear-gradient(180deg,#fafdff_0%,#edf5fb_100%)] p-5">
-                <div className="vista-avatar-panel flex h-20 w-20 items-center justify-center rounded-[18px] text-4xl">{userImage}</div>
+                <div className="vista-avatar-panel flex h-20 w-20 items-center justify-center rounded-[18px]">
+                  <UserIcon size={52} />
+                </div>
                 <div>
                   <div className="text-xl font-semibold">{userName}</div>
                   <div className="text-xs text-slate-500">Administrator</div>
@@ -79,11 +102,11 @@ export default function ControlPanel({ aeroColor, setAeroColor, wallpaper, setWa
               </div>
 
               <div>
-                <div className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Account Picture</div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Account Color</div>
                 <div className="flex flex-wrap gap-3">
-                  {avatarChoices.map((avatar) => (
-                    <button key={avatar} type="button" onClick={() => setUserImage(avatar)} className={`flex h-12 w-12 items-center justify-center rounded-[10px] border text-2xl ${userImage === avatar ? 'border-[#2a80dd] bg-[#dff0ff]' : 'border-slate-200 bg-slate-50 hover:bg-white'}`}>
-                      {avatar}
+                  {avatarColorChoices.map((color) => (
+                    <button key={color.id} type="button" className={`flex h-12 w-12 items-center justify-center rounded-[10px] border ${color.bg} border-slate-200 hover:ring-2 hover:ring-blue-400`}>
+                      <div className="h-6 w-6 rounded-full bg-white/30" />
                     </button>
                   ))}
                 </div>
@@ -94,10 +117,12 @@ export default function ControlPanel({ aeroColor, setAeroColor, wallpaper, setWa
           {view === 'appearance' && (
             <div className="max-w-2xl space-y-8">
               <section>
-                <div className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Window Color</div>
+                <div className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Window Color</div>
                 <div className="flex gap-3">
                   {aeroChoices.map((choice) => (
-                    <button key={choice} type="button" onClick={() => setAeroColor(choice)} className={`rounded-full px-4 py-2 text-xs font-semibold capitalize ${aeroColor === choice ? 'bg-[#1676d2] text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    <button key={choice} type="button" onClick={() => setAeroColor(choice)}
+                      className={`flex items-center gap-2 rounded-[10px] border px-4 py-2.5 text-xs font-semibold capitalize ${aeroColor === choice ? 'border-[#2a80dd] bg-[#dff0ff] text-[#1676d2]' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'}`}>
+                      <div className={`h-4 w-4 rounded-full ${aeroColors[choice] || 'bg-teal-500'}`} />
                       {choice}
                     </button>
                   ))}
@@ -105,10 +130,11 @@ export default function ControlPanel({ aeroColor, setAeroColor, wallpaper, setWa
               </section>
 
               <section>
-                <div className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Wallpaper</div>
+                <div className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Desktop Background</div>
                 <div className="flex gap-3">
                   {wallpaperChoices.map((choice) => (
-                    <button key={choice} type="button" onClick={() => setWallpaper(choice)} className={`rounded-[10px] border px-4 py-3 text-sm capitalize ${wallpaper === choice ? 'border-[#2a80dd] bg-[#e7f3ff]' : 'border-slate-200 bg-slate-50'}`}>
+                    <button key={choice} type="button" onClick={() => setWallpaper(choice)}
+                      className={`rounded-[10px] border px-4 py-3 text-sm capitalize ${wallpaper === choice ? 'border-[#2a80dd] bg-[#e7f3ff] text-[#1676d2] font-semibold' : 'border-slate-200 bg-slate-50'}`}>
                       {choice}
                     </button>
                   ))}
@@ -140,10 +166,12 @@ export default function ControlPanel({ aeroColor, setAeroColor, wallpaper, setWa
   );
 }
 
-function CategoryCard({ title, description, icon }: { title: string; description: string; icon: string }) {
+function CategoryCard({ title, description, iconKey }: { title: string; description: string; iconKey: string }) {
   return (
     <div className="flex gap-4 rounded-[14px] border border-transparent p-3 transition hover:border-[#c8ddf1] hover:bg-[#f7fbff]">
-      <div className="text-4xl">{icon}</div>
+      <div className="flex h-12 w-12 items-center justify-center rounded-[12px] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc_0%,#e8eef4_100%)]">
+        <VistaIcon name={iconKey} size={32} />
+      </div>
       <div>
         <div className="font-semibold text-[#1b5e93]">{title}</div>
         <div className="text-xs text-slate-500">{description}</div>

@@ -14,7 +14,7 @@ const VistaProfileContext = createContext<VistaProfileContextValue | null>(null)
 
 export function VistaProfileProvider({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState('Irie');
-  const [userImage, setUserImage] = useState('🌸');
+  const [userImage, setUserImage] = useState('');
 
   const value = useMemo(
     () => ({

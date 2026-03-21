@@ -5,7 +5,7 @@ export type VistaNodeType = 'root' | 'drive' | 'folder' | 'text' | 'video' | 'im
 interface VistaNodeBase {
   name: string;
   type: VistaNodeType;
-  icon: string;
+  icon?: string;
   description?: string;
   size?: string;
   modified?: string;
@@ -157,6 +157,41 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                   },
                 ],
               },
+              {
+                name: 'Accessories',
+                type: 'folder',
+                icon: '📁',
+                modified: stamp,
+                children: [
+                  {
+                    name: 'calc.exe',
+                    type: 'app',
+                    icon: '🔢',
+                    size: '116 KB',
+                    modified: stamp,
+                    description: 'Launch Calculator',
+                    windowId: 'calculator',
+                  },
+                  {
+                    name: 'mspaint.exe',
+                    type: 'app',
+                    icon: '🎨',
+                    size: '240 KB',
+                    modified: stamp,
+                    description: 'Launch Paint',
+                    windowId: 'paint',
+                  },
+                  {
+                    name: 'notepad.exe',
+                    type: 'app',
+                    icon: '📄',
+                    size: '68 KB',
+                    modified: stamp,
+                    description: 'Launch Notepad',
+                    windowId: 'notepad',
+                  },
+                ],
+              },
             ],
           },
           {
@@ -283,6 +318,41 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                     ],
                   },
                   {
+                    name: 'Music',
+                    type: 'folder',
+                    modified: stamp,
+                    children: [
+                      {
+                        name: 'Windows Vista Startup.wma',
+                        type: 'text',
+                        size: '312 KB',
+                        modified: stamp,
+                        content: 'Windows Media Audio — Vista startup chime audio asset.',
+                      },
+                      {
+                        name: 'Sample Music',
+                        type: 'folder',
+                        modified: stamp,
+                        children: [
+                          {
+                            name: 'Kalimba.mp3',
+                            type: 'text',
+                            size: '4.2 MB',
+                            modified: stamp,
+                            content: 'Mr. Scruff - Kalimba — Sample music included with Windows Vista.',
+                          },
+                          {
+                            name: 'Maid with the Flaxen Hair.mp3',
+                            type: 'text',
+                            size: '3.8 MB',
+                            modified: stamp,
+                            content: 'Richard Stoltzman - Maid with the Flaxen Hair — Sample music.',
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
                     name: 'Games',
                     type: 'folder',
                     icon: '🎮',
@@ -296,6 +366,30 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                         modified: stamp,
                         description: 'Launch Minesweeper',
                         windowId: 'minesweeper',
+                      },
+                      {
+                        name: 'Solitaire.exe',
+                        type: 'app',
+                        size: '80 KB',
+                        modified: stamp,
+                        description: 'Classic Klondike card game',
+                        windowId: 'solitaire',
+                      },
+                      {
+                        name: 'Purble Place.exe',
+                        type: 'app',
+                        size: '120 KB',
+                        modified: stamp,
+                        description: 'Fun matching and deduction games',
+                        windowId: 'purbleplace',
+                      },
+                      {
+                        name: 'Chess Titans.exe',
+                        type: 'app',
+                        size: '140 KB',
+                        modified: stamp,
+                        description: 'Beautiful 3D chess game',
+                        windowId: 'chesstitans',
                       },
                     ],
                   },
@@ -399,6 +493,24 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                     modified: stamp,
                     description: 'Launch shell window',
                     windowId: 'computer',
+                  },
+                  {
+                    name: 'calc.exe',
+                    type: 'app',
+                    icon: '🔢',
+                    size: '116 KB',
+                    modified: stamp,
+                    description: 'Launch Calculator',
+                    windowId: 'calculator',
+                  },
+                  {
+                    name: 'mspaint.exe',
+                    type: 'app',
+                    icon: '🎨',
+                    size: '240 KB',
+                    modified: stamp,
+                    description: 'Launch Paint',
+                    windowId: 'paint',
                   },
                   {
                     name: 'kernel32.dll',

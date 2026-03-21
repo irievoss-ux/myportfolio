@@ -72,7 +72,9 @@ export default function MediaPlayer({ file }: { file: VistaVideoNode | null }) {
           <video ref={videoRef} src={file.url} className="relative h-full w-full object-contain" autoPlay controls={false} onClick={togglePlayback} onError={() => setFailed(true)} />
         ) : (
           <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_center,rgba(72,173,255,0.28),transparent_45%)]">
-            <div className="text-7xl">🎞️</div>
+            <div className="text-7xl text-white/50">
+              <svg width="72" height="72" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="2"/><polygon points="20,14 36,24 20,34" fill="currentColor" opacity="0.6"/></svg>
+            </div>
             <div className="text-center">
               <div className="text-lg font-light">Preview unavailable in this environment</div>
               <div className="mt-1 text-sm text-white/60">The local video entry is wired up, but playback fell back to shell chrome.</div>

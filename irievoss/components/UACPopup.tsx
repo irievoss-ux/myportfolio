@@ -8,6 +8,24 @@ interface UACPopupProps {
   onCancel: () => void;
 }
 
+function ShieldIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48">
+      <path d="M24 4 L40 12 L40 24 Q40 36 24 44 Q8 36 8 24 L8 12Z" fill="url(#shieldGrad)" stroke="#2a5a8a" strokeWidth="1.5"/>
+      <path d="M24 8 L36 14 L36 24 Q36 34 24 40 Q12 34 12 24 L12 14Z" fill="url(#shieldInner)"/>
+      <path d="M18 24 L22 28 L30 18" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+      <defs>
+        <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fdd835"/><stop offset="50%" stopColor="#f9a825"/><stop offset="100%" stopColor="#f57f17"/>
+        </linearGradient>
+        <linearGradient id="shieldInner" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffee58"/><stop offset="100%" stopColor="#fbc02d"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 export default function UACPopup({
   appName,
   publisher = 'Microsoft Windows',
@@ -21,7 +39,9 @@ export default function UACPopup({
       <div className="relative w-[520px] overflow-hidden rounded-[12px] border border-[#27384f] bg-[#f8f8f8] shadow-[0_26px_80px_rgba(0,0,0,0.7)]">
         <div className="border-b border-[#103b63] bg-[linear-gradient(180deg,#376d9d_0%,#154a78_100%)] px-5 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/10 text-xl">🛡️</div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/10">
+              <ShieldIcon size={24} />
+            </div>
             <div>
               <div className="text-sm font-semibold">User Account Control</div>
               <div className="text-[11px] text-white/70">Secure Desktop</div>
@@ -30,7 +50,9 @@ export default function UACPopup({
         </div>
 
         <div className="flex gap-4 bg-white px-6 py-6 text-slate-800">
-          <div className="mt-1 text-5xl">🛡️</div>
+          <div className="mt-1">
+            <ShieldIcon size={48} />
+          </div>
           <div className="flex-1">
             <h2 className="text-[22px] font-semibold leading-7 text-[#063e77]">Windows needs your permission to continue</h2>
             <p className="mt-2 text-sm text-slate-600">{description}</p>

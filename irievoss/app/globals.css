@@ -13,6 +13,7 @@ body {
 body {
   overflow: hidden;
   background: #05070b;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 button,
@@ -20,15 +21,41 @@ input {
   font: inherit;
 }
 
+/* Vista Start Orb */
 .vista-orb {
   background: radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.9), rgba(255,255,255,0.08) 28%), linear-gradient(180deg, #58b5ff 0%, #1365ad 58%, #0c3a71 100%);
   box-shadow: inset 0 1px 2px rgba(255,255,255,0.75), inset 0 -8px 20px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.2);
 }
 
+/* Aero Glass Window Shell */
 .vista-window-shell {
   background: linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.08));
 }
 
+/* Title bar shimmer */
+.vista-titlebar {
+  position: relative;
+  overflow: hidden;
+}
+
+.vista-titlebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: aeroShimmer 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes aeroShimmer {
+  0%, 100% { left: -100%; }
+  50% { left: 150%; }
+}
+
+/* Window buttons */
 .vista-window-button,
 .vista-window-button-close {
   height: 20px;
@@ -37,6 +64,11 @@ input {
   background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(178,207,233,0.85) 55%, rgba(99,134,170,0.9) 100%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.95);
   color: #0f2238;
+  transition: all 0.15s ease;
+}
+
+.vista-window-button:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(200,225,245,0.9) 55%, rgba(130,165,200,0.95) 100%);
 }
 
 .vista-window-button-close {
@@ -44,6 +76,11 @@ input {
   color: white;
 }
 
+.vista-window-button-close:hover {
+  background: linear-gradient(180deg, #ffaaaa 0%, #ee5555 55%, #aa2222 100%);
+}
+
+/* Glass panels */
 .vista-glass-panel {
   border: 1px solid rgba(255,255,255,0.24);
   background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.07));
@@ -51,8 +88,63 @@ input {
   backdrop-filter: blur(16px);
 }
 
+/* Avatar panel */
 .vista-avatar-panel {
   border: 1px solid rgba(112, 150, 193, 0.6);
   background: linear-gradient(180deg, #eefaff 0%, #bcd9f6 100%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 10px 18px rgba(0,0,0,0.15);
+}
+
+/* Custom Scrollbars (Vista style) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #eef3f8;
+  border-left: 1px solid #c8d8e8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b4c8dc, #8aa4bc);
+  border-radius: 5px;
+  border: 1px solid #8898a8;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #98b4cc, #6e8aa4);
+}
+
+/* Volume slider */
+.vista-volume-slider {
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+.vista-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #8ec8ff, #2a70c4);
+  border: 1px solid #5a88b8;
+  cursor: pointer;
+}
+
+.vista-volume-slider::-webkit-slider-runnable-track {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+  height: 4px;
+}
+
+/* Cursor styles */
+.vista-cursor-default {
+  cursor: default;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(51, 130, 210, 0.35);
+  color: inherit;
 }
