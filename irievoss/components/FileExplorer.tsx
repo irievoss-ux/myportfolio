@@ -1,160 +1,130 @@
 "use client";
-import { useState } from 'react';
 
-// Using 'any' in the signature to solve the IntrinsicAttributes error
-export default function FileExplorer({ path, setPath, onOpenFile, onToggleWindow }: any) {
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+import { useMemo, useState } from 'react';
+import { createVistaFileSystem, getChildrenAtPath, getNodeAtPath, pathToWindowsString, type VistaNode, type VistaPath } from '@/lib/vista/filesystem';
+import { useVistaProfile } from './providers/VistaProfileProvider';
 
-  // --- THE DEEP VISTA FILE SYSTEM ---
-  const fileSystem: Record<string, any> = {
-    "Computer": [
-      { name: "OSDisk (C:)", type: "drive", icon: "💽", percent: "65%", total: "120 GB", free: "42 GB" },
-      { name: "TFT_Clips (D:)", type: "drive", icon: "💿", percent: "92%", total: "500 GB", free: "1.2 GB", red: true },
-    ],
-    "OSDisk (C:)": [
-      { name: "Program Files", type: "folder", icon: "📁" },
-      { name: "Users", type: "folder", icon: "📁" },
-      { name: "Windows", type: "folder", icon: "📁" },
-    ],
-    "Windows": [
-      { name: "System32", type: "folder", icon: "📁" },
-      { name: "Media", type: "folder", icon: "📁" },
-      { name: "explorer.exe", type: "app", id: "computer", icon: "🖥️", size: "2.4 MB" },
-      { name: "win.ini", type: "text", icon: "📄", size: "1 KB", content: "[boot loader]\ntimeout=30\ndefault=multi(0)disk(0)rdisk(0)partition(1)\\WINDOWS" },
-    ],
-    "System32": [
-      { name: "cmd.exe", type: "app", id: "terminal", icon: "💻", size: "400 KB" },
-      { name: "kernel32.dll", type: "sys", icon: "⚙️", size: "1.2 MB" },
-      { name: "user32.dll", type: "sys", icon: "⚙️", size: "800 KB" },
-    ],
-    "Program Files": [
-      { name: "Internet Explorer", type: "folder", icon: "📁" },
-      { name: "Windows Media Player", type: "folder", icon: "📁" },
-    ],
-    "Internet Explorer": [
-      { name: "iexplore.exe", type: "app", id: "browser", icon: "🌐", size: "1.8 MB" },
-    ],
-    "Users": [
-      { name: "Irie Voss", type: "folder", icon: "👤" },
-      { name: "Public", type: "folder", icon: "📁" },
-    ],
-    "Irie Voss": [
-      { name: "Documents", type: "folder", icon: "📁" },
-      { name: "Music", type: "folder", icon: "📁" },
-      { name: "Pictures", type: "folder", icon: "📁" },
-      { name: "Games", type: "folder", icon: "📁" },
-    ],
-    "Documents": [
-      { name: "About_Me.txt", type: "text", icon: "📄", size: "12 KB", content: "Irie Voss\nGamer, Creator, Enthusiast.\nCurrently simulating 2006." },
-      { name: "Secrets.txt", type: "text", icon: "📄", size: "1 KB", content: "The password to the D: drive is MORTDOG." },
-    ],
-    "Games": [
-      { name: "Minesweeper.exe", type: "app", id: "minesweeper", icon: "💣", size: "45 KB" },
-    ],
-    "TFT_Clips (D:)": [
-      { name: "Insane_Karma_3.mp4", type: "video", icon: "🎬", size: "45 MB", url: "https://www.w3schools.com/html/mov_bbb.mp4" },
-      { name: "Final_Fight.mp4", type: "video", icon: "🎬", size: "120 MB", url: "https://www.w3schools.com/html/movie.mp4" },
-    ]
+interface FileExplorerProps {
+  path: VistaPath;
+  setPath: (path: VistaPath) => void;
+  onOpenNode: (node: VistaNode, parentPath: VistaPath) => void;
+}
+
+export default function FileExplorer({ path, setPath, onOpenNode }: FileExplorerProps) {
+  const { accountFolder } = useVistaProfile();
+  const fileSystem = useMemo(() => createVistaFileSystem(accountFolder), [accountFolder]);
+  const [selectedItem, setSelectedItem] = useState<VistaNode | null>(null);
+
+  const currentNode = getNodeAtPath(fileSystem, path);
+  const items = getChildrenAtPath(fileSystem, path);
+
+  const openItem = (item: VistaNode) => {
+    if ('children' in item) {
+      setPath([...path, item.name]);
+      setSelectedItem(null);
+      return;
+    }
+
+    onOpenNode(item, path);
   };
 
-  const currentFolder = path[path.length - 1];
-  const items = fileSystem[currentFolder] || [];
-
-  const jumpTo = (folderPath: string[]) => {
-    setPath(folderPath);
-    setSelectedItem(null);
-  };
-
-  const enterFolder = (folder: string) => {
-    setPath([...path, folder]);
-    setSelectedItem(null);
-  };
-
-  const goBack = () => { if (path.length > 1) setPath(path.slice(0, -1)); };
+  const quickLinks = [
+    ['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Documents'],
+    ['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Videos'],
+    ['Computer', 'OSDisk (C:)', 'Windows', 'System32'],
+    ['Computer', 'Data (D:)', 'Captured Footage'],
+  ] satisfies VistaPath[];
 
   return (
-    <div className="flex flex-col h-full bg-white font-sans text-sm select-none" onClick={() => setSelectedItem(null)}>
-      {/* ADDRESS BAR */}
-      <div className="bg-[#EBF3F9] px-2 py-1.5 flex items-center gap-2 border-b border-[#A2C6E0] shrink-0">
-        <button 
-          onClick={(e) => { e.stopPropagation(); goBack(); }} 
-          disabled={path.length === 1} 
-          className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all ${path.length > 1 ? 'bg-gradient-to-b from-blue-400 to-blue-700 border-blue-900 text-white shadow-md' : 'bg-gray-200 text-gray-400 border-gray-300'}`}
-        >
-          ◁
-        </button>
-        
-        <div className="flex-1 flex items-center bg-white border border-[#8DA9C2] h-6 rounded px-1 overflow-hidden shadow-inner">
-          {path.map((step: string, i: number) => (
-            <div key={i} className="flex items-center">
-              {i > 0 && <span className="text-[10px] text-gray-400 mx-0.5">▶</span>}
-              <span 
-                onClick={(e) => { e.stopPropagation(); jumpTo(path.slice(0, i + 1)); }} 
-                className="text-xs hover:bg-blue-100 hover:text-blue-800 cursor-pointer px-1 rounded truncate max-w-[120px]"
-              >
-                {step}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 flex overflow-hidden">
-        {/* SIDEBAR */}
-        <div className="w-40 bg-[#F1F8FF] border-r border-[#A2C6E0] p-2 text-xs flex flex-col gap-1 shrink-0">
-          <div className="font-bold text-blue-800 mb-2 border-b border-blue-100 pb-1">Favorite Links</div>
-          {[
-            { name: "Documents", icon: "📁", p: ["Computer", "Users", "Irie Voss", "Documents"] },
-            { name: "Pictures", icon: "🖼️", p: ["Computer", "Users", "Irie Voss", "Pictures"] },
-            { name: "Games", icon: "🎮", p: ["Computer", "Users", "Irie Voss", "Games"] }
-          ].map(f => (
-            <div key={f.name} onClick={(e) => { e.stopPropagation(); jumpTo(f.p); }} className={`flex items-center gap-2 p-1 cursor-pointer rounded hover:bg-blue-100 ${currentFolder === f.name ? 'bg-blue-200' : ''}`}>
-              <span>{f.icon}</span> {f.name}
-            </div>
-          ))}
-        </div>
-
-        {/* MAIN VIEW */}
-        <div className="flex-1 p-4 overflow-y-auto bg-white">
-          <div className="flex flex-wrap gap-4 content-start">
-            {items.map((item: any, i: number) => (
-              <div 
-                key={i} 
-                onDoubleClick={() => {
-                  if (item.type === 'folder' || item.type === 'drive') enterFolder(item.name);
-                  else if (item.type === 'app') onToggleWindow(item.id);
-                  else onOpenFile(item);
-                }}
-                onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
-                className={`flex flex-col items-center gap-1 w-24 text-center cursor-pointer p-1 rounded border ${selectedItem?.name === item.name ? 'bg-blue-100 border-blue-300 shadow-sm' : 'border-transparent'}`}
-              >
-                {item.type === 'drive' ? (
-                  <div className="flex flex-col items-center w-full">
-                    <span className="text-4xl drop-shadow-sm">{item.icon}</span>
-                    <div className="w-16 h-2 bg-gray-200 border border-gray-400 mt-1 rounded-sm overflow-hidden">
-                      <div className={`h-full ${item.red ? 'bg-red-500' : 'bg-blue-500'}`} style={{width: item.percent}} />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 bg-white border border-gray-300 flex items-center justify-center text-2xl shadow-sm rounded group-hover:bg-blue-50">
-                    {item.icon}
-                  </div>
-                )}
-                <span className="text-[10px] truncate w-full px-1">{item.name}</span>
-              </div>
+    <div className="flex h-full flex-col bg-white text-sm text-slate-800" onClick={() => setSelectedItem(null)}>
+      <div className="border-b border-[#b5cade] bg-[linear-gradient(180deg,#f4f9fe_0%,#ddeaf5_100%)] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              if (path.length > 1) setPath(path.slice(0, -1));
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-[#7b9ac0] bg-[linear-gradient(180deg,#7dbdf6_0%,#1663b1_100%)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={path.length === 1}
+          >
+            ◀
+          </button>
+          <div className="flex flex-1 items-center overflow-hidden rounded-[6px] border border-[#8aa8c3] bg-white px-2 py-1 text-xs shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)]">
+            {path.map((segment, index) => (
+              <button key={`${segment}-${index}`} type="button" onClick={(event) => { event.stopPropagation(); setPath(path.slice(0, index + 1)); }} className="flex items-center rounded px-1 hover:bg-blue-100">
+                {index > 0 && <span className="mx-1 text-slate-400">▶</span>}
+                <span className="truncate">{segment}</span>
+              </button>
             ))}
           </div>
         </div>
+        <div className="mt-2 rounded-[6px] border border-[#d2deea] bg-white/80 px-3 py-1 text-[11px] text-slate-500">Address: {pathToWindowsString(path)}</div>
       </div>
 
-      {/* FOOTER DETAILS PANE */}
-      <div className="h-14 bg-gradient-to-b from-[#4BA1CC] to-[#2B618F] border-t border-white/20 flex items-center px-4 gap-4 shrink-0 text-white shadow-lg">
-         <span className="text-3xl drop-shadow-md">{selectedItem?.icon || '🖥️'}</span>
-         <div className="flex flex-col">
-            <span className="font-bold text-sm drop-shadow-sm">{selectedItem?.name || currentFolder}</span>
-            <span className="text-[10px] opacity-70 uppercase tracking-tighter">{selectedItem?.size || 'System Folder'}</span>
-         </div>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="w-56 shrink-0 border-r border-[#c8d7e5] bg-[linear-gradient(180deg,#f6fbff_0%,#edf5fb_100%)] p-3">
+          <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Navigation Pane</div>
+          <div className="space-y-1 text-[12px]">
+            {quickLinks.map((link) => {
+              const targetNode = getNodeAtPath(fileSystem, link);
+              return (
+                <button
+                  key={link.join('>')}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPath(link);
+                    setSelectedItem(targetNode);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left hover:bg-[#dff0ff]"
+                >
+                  <span>{targetNode.icon}</span>
+                  <span className="truncate">{targetNode.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Folder Tasks</div>
+          <div className="mt-2 space-y-2 text-[11px] text-[#1d5c90]">
+            <button type="button" className="block hover:underline">Organize</button>
+            <button type="button" className="block hover:underline">Open in new window</button>
+            <button type="button" className="block hover:underline">Burn to disc</button>
+          </div>
+        </aside>
+
+        <section className="flex min-w-0 flex-1 flex-col bg-white">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-4 overflow-y-auto p-5">
+            {items.map((item) => (
+              <button
+                key={item.name}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setSelectedItem(item);
+                }}
+                onDoubleClick={() => openItem(item)}
+                className={`group flex min-h-[108px] flex-col items-center rounded-[10px] border p-2 text-center ${selectedItem?.name === item.name ? 'border-[#8ebcea] bg-[#dff0ff]' : 'border-transparent hover:border-[#d5e7f8] hover:bg-[#f5fbff]'}`}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-[12px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#edf3fa_100%)] text-3xl shadow-[0_3px_8px_rgba(0,0,0,0.08)] group-hover:scale-105">
+                  {item.icon}
+                </div>
+                <div className="mt-2 line-clamp-2 text-[11px] leading-4 text-slate-700">{item.name}</div>
+                <div className="mt-1 text-[10px] text-slate-400">{item.size ?? item.description ?? ('children' in item ? 'File folder' : item.type)}</div>
+              </button>
+            ))}
+          </div>
+        </section>
       </div>
+
+      <footer className="flex h-18 items-center gap-4 border-t border-[#9cb8d2] bg-[linear-gradient(180deg,#4ba1cc_0%,#1e5a8d_100%)] px-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[12px] bg-white/15 text-3xl">{selectedItem?.icon ?? currentNode.icon}</div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold">{selectedItem?.name ?? currentNode.name}</div>
+          <div className="truncate text-[11px] text-white/70">{selectedItem?.description ?? ('children' in (selectedItem ?? currentNode) ? 'Folder ready' : `${selectedItem?.size ?? currentNode.size ?? 'Shell item'} • Double-click to open`)}</div>
+        </div>
+      </footer>
     </div>
   );
 }

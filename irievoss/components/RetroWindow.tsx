@@ -1,80 +1,83 @@
 "use client";
-import { Rnd } from "react-rnd";
-import { ReactNode, useState } from "react";
 
-interface Props {
+import { Rnd } from 'react-rnd';
+import { useEffect, useState, type ReactNode } from 'react';
+
+interface RetroWindowProps {
   id: string;
   title: string;
+  icon?: string;
   children: ReactNode;
   isOpen: boolean;
-  onClose: () => void;
-  onFocus: () => void;
+  isActive: boolean;
   zIndex: number;
   defaultX?: number;
   defaultY?: number;
   defaultW?: number;
   defaultH?: number;
+  onClose: () => void;
+  onFocus: () => void;
 }
 
-export default function RetroWindow({ 
-  title, children, isOpen, onClose, onFocus, zIndex, 
-  defaultX = 100, defaultY = 100, defaultW = 600, defaultH = 450 
-}: Props) {
+export default function RetroWindow({
+  id,
+  title,
+  icon = '🪟',
+  children,
+  isOpen,
+  isActive,
+  zIndex,
+  defaultX = 120,
+  defaultY = 90,
+  defaultW = 640,
+  defaultH = 480,
+  onClose,
+  onFocus,
+}: RetroWindowProps) {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [viewport, setViewport] = useState({ width: 1280, height: 720 });
+
+  useEffect(() => {
+    const syncViewport = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    syncViewport();
+    window.addEventListener('resize', syncViewport);
+    return () => window.removeEventListener('resize', syncViewport);
+  }, []);
 
   if (!isOpen) return null;
 
   return (
     <Rnd
+      size={isMaximized ? { width: viewport.width, height: viewport.height - 46 } : undefined}
+      position={isMaximized ? { x: 0, y: 0 } : undefined}
       default={{ x: defaultX, y: defaultY, width: defaultW, height: defaultH }}
       disableDragging={isMaximized}
       enableResizing={!isMaximized}
-      dragHandleClassName="aero-handle"
+      bounds="window"
+      dragHandleClassName={`aero-handle-${id}`}
+      onMouseDown={onFocus}
       onDragStart={onFocus}
       onResizeStart={onFocus}
-      size={isMaximized ? { width: "100vw", height: "calc(100vh - 40px)" } : undefined}
-      position={isMaximized ? { x: 0, y: 0 } : undefined}
-      style={{ zIndex, display: 'flex' }}
-      bounds="window"
-      // THE THICK VISTA GLASS FRAME
-      className={`flex flex-col rounded-lg shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.8)] border border-white/60 bg-white/20 backdrop-blur-md p-[6px] transition-all duration-200 ${isMaximized ? 'rounded-none p-0 border-none' : ''}`}
+      style={{ zIndex }}
+      className={`flex flex-col overflow-hidden ${isMaximized ? 'rounded-none' : 'rounded-[12px]'}`}
     >
-      {/* TITLE BAR (Sits inside the glass frame) */}
-      <div className="aero-handle h-7 flex justify-between items-center select-none shrink-0 w-full mb-1">
-        <div className="flex items-center gap-2 pl-1">
-          {/* Fake Window Icon */}
-          <div className="w-4 h-4 rounded-sm bg-blue-500/50 shadow-sm" />
-          <span className="text-black text-sm tracking-wide" style={{ textShadow: '0 0 5px white, 0 0 10px white' }}>
-            {title}
-          </span>
-        </div>
-        
-        {/* VISTA WINDOW CONTROLS */}
-        <div className="flex gap-[2px] h-5">
-          <button 
-            onClick={() => {}} 
-            className="w-7 h-full rounded-sm border border-black/40 bg-gradient-to-b from-white/80 via-blue-100/80 to-blue-300/80 hover:brightness-125 flex items-center justify-center text-black shadow-sm"
-          >
-            <span className="text-xs mb-2">_</span>
-          </button>
-          <button 
-            onClick={() => setIsMaximized(!isMaximized)} 
-            className="w-7 h-full rounded-sm border border-black/40 bg-gradient-to-b from-white/80 via-blue-100/80 to-blue-300/80 hover:brightness-125 flex items-center justify-center text-black shadow-sm"
-          >
-            {isMaximized ? '❐' : '□'}
-          </button>
-          <button 
-            onClick={onClose} 
-            className="w-11 h-full rounded-sm border border-black/60 bg-gradient-to-b from-red-400 via-red-500 to-red-700 hover:from-red-300 hover:via-red-400 hover:to-red-600 flex items-center justify-center text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]"
-          >
-            <span className="text-[10px] font-bold">✕</span>
-          </button>
-        </div>
-      </div>
+      <div className={`vista-window-shell flex h-full flex-col border border-white/55 bg-white/18 shadow-[0_22px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl ${isActive ? 'ring-1 ring-white/40' : 'opacity-92 saturate-90'} ${isMaximized ? 'rounded-none border-x-0 border-t-0' : 'rounded-[12px]'}`}>
+        <div className={`aero-handle-${id} flex h-9 items-center justify-between border-b border-white/25 bg-[linear-gradient(180deg,rgba(255,255,255,0.42),rgba(255,255,255,0.08))] px-2.5 text-slate-900`}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{icon}</span>
+            <span className="text-sm font-medium tracking-wide text-slate-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.9)]">{title}</span>
+          </div>
 
-      {/* WINDOW CONTENT (Opaque white, solid border) */}
-      <div className="flex-1 w-full overflow-hidden bg-white text-black border border-gray-600 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.5)]">
-        {children}
+          <div className="flex items-center gap-[3px]">
+            <button type="button" onClick={onFocus} className="vista-window-button w-8 text-[11px]">—</button>
+            <button type="button" onClick={() => setIsMaximized((value) => !value)} className="vista-window-button w-8 text-[11px]">{isMaximized ? '❐' : '□'}</button>
+            <button type="button" onClick={onClose} className="vista-window-button-close w-11 text-[11px]">✕</button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden rounded-b-[10px] border border-black/35 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+          {children}
+        </div>
       </div>
     </Rnd>
   );

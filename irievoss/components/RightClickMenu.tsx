@@ -1,23 +1,33 @@
 "use client";
 
-export default function RightClickMenu({ isOpen, x, y, onClose, onPersonalize, onTaskManager }: any) {
+interface RightClickMenuProps {
+  isOpen: boolean;
+  x: number;
+  y: number;
+  onClose: () => void;
+  onPersonalize: () => void;
+  onTaskManager: () => void;
+}
+
+export default function RightClickMenu({ isOpen, x, y, onClose, onPersonalize, onTaskManager }: RightClickMenuProps) {
   if (!isOpen) return null;
 
+  const runAndClose = (action: () => void) => {
+    action();
+    onClose();
+  };
+
   return (
-    <div 
-      className="fixed z-[10000] w-56 bg-[#f2f2f2] border border-[#a0a0a0] shadow-xl font-sans text-xs py-0.5"
-      style={{ top: y, left: x }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="absolute left-0 top-0 bottom-0 w-7 bg-gray-200 border-r border-white/80 z-0" />
+    <div className="fixed z-[10000] w-56 border border-[#a0a0a0] bg-[#f2f2f2] py-0.5 font-sans text-xs shadow-xl" style={{ top: y, left: x }} onClick={(event) => event.stopPropagation()}>
+      <div className="absolute bottom-0 left-0 top-0 w-7 border-r border-white/80 bg-gray-200" />
       <div className="relative z-10">
-        <div className="px-8 py-1 hover:bg-blue-100 cursor-default">View</div>
-        <div className="px-8 py-1 hover:bg-blue-100 cursor-default">Sort By</div>
-        <div className="px-8 py-1 hover:bg-blue-100 cursor-default" onClick={() => window.location.reload()}>Refresh</div>
-        <div className="h-px bg-gray-300 my-1 mx-1" />
-        <div className="px-8 py-1 hover:bg-blue-100 cursor-default" onClick={onTaskManager}>Task Manager</div>
-        <div className="h-px bg-gray-300 my-1 mx-1" />
-        <div className="px-8 py-1 hover:bg-blue-100 cursor-default" onClick={onPersonalize}>Personalize</div>
+        <button type="button" className="block w-full px-8 py-1 text-left hover:bg-blue-100">View</button>
+        <button type="button" className="block w-full px-8 py-1 text-left hover:bg-blue-100">Sort By</button>
+        <button type="button" onClick={() => runAndClose(() => window.location.reload())} className="block w-full px-8 py-1 text-left hover:bg-blue-100">Refresh</button>
+        <div className="mx-1 my-1 h-px bg-gray-300" />
+        <button type="button" onClick={() => runAndClose(onTaskManager)} className="block w-full px-8 py-1 text-left hover:bg-blue-100">Task Manager</button>
+        <div className="mx-1 my-1 h-px bg-gray-300" />
+        <button type="button" onClick={() => runAndClose(onPersonalize)} className="block w-full px-8 py-1 text-left hover:bg-blue-100">Personalize</button>
       </div>
     </div>
   );

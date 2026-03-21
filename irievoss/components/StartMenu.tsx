@@ -1,90 +1,94 @@
 "use client";
-import { motion, AnimatePresence } from 'framer-motion';
 
-export default function StartMenu({ isOpen, userName, userImage, onToggleWindow, onOpenFolder, onShowShutdown }: any) {
+import { AnimatePresence, motion } from 'framer-motion';
+import { useVistaProfile } from './providers/VistaProfileProvider';
+
+interface StartMenuProps {
+  isOpen: boolean;
+  onToggleWindow: (id: string) => void;
+  onOpenPath: (path: string[]) => void;
+  onShowShutdown: () => void;
+}
+
+export default function StartMenu({ isOpen, onToggleWindow, onOpenPath, onShowShutdown }: StartMenuProps) {
+  const { userImage, userName, accountFolder } = useVistaProfile();
+
   const leftApps = [
-    { id: 'browser', label: 'Internet Explorer', icon: '🌐', sub: 'Browse the web' },
-    { id: 'media', label: 'Windows Mail', icon: '✉️', sub: 'Read your email' },
-    { id: 'minesweeper', label: 'Minesweeper', icon: '💣', sub: 'Classic game' },
-    { id: 'paint', label: 'Paint', icon: '🎨', sub: 'Create and edit drawings' },
+    { id: 'browser', label: 'Internet Explorer', icon: '🌐', sub: 'Portfolio browser' },
+    { id: 'mail', label: 'Windows Mail', icon: '✉️', sub: 'Contact Irie directly' },
+    { id: 'media', label: 'Windows Media Player', icon: '🎞️', sub: 'Play local media' },
+    { id: 'system', label: 'System', icon: '🧾', sub: 'View OS details' },
+    { id: 'terminal', label: 'Command Prompt', icon: '🖥️', sub: 'Elevated shell tools' },
+    { id: 'minesweeper', label: 'Minesweeper', icon: '💣', sub: 'Classic game break' },
   ];
 
-  const rightFolders = [
-    { label: userName, bold: true, top: true, action: () => onOpenFolder('Irie Voss') },
-    { label: 'Documents', action: () => onOpenFolder('Documents') },
-    { label: 'Pictures', action: () => onOpenFolder('Pictures') },
-    { label: 'Music', action: () => onOpenFolder('Music') },
-    { label: 'Games', action: () => onToggleWindow('minesweeper') },
+  const rightPane = [
+    { label: userName, action: () => onOpenPath(['Computer', 'OSDisk (C:)', 'Users', accountFolder]) },
+    { label: 'Documents', action: () => onOpenPath(['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Documents']) },
+    { label: 'Pictures', action: () => onOpenPath(['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Pictures']) },
+    { label: 'Videos', action: () => onOpenPath(['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Videos']) },
+    { label: 'Games', action: () => onOpenPath(['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Games']) },
     { divider: true },
-    { label: 'Computer', bold: true, action: () => onToggleWindow('computer') },
+    { label: 'Computer', action: () => onToggleWindow('computer') },
     { label: 'Network', action: () => onToggleWindow('browser') },
-    { divider: true },
     { label: 'Control Panel', action: () => onToggleWindow('controlpanel') },
-    { label: 'Default Programs' },
-    { label: 'Help and Support' },
+    { label: 'Performance', action: () => onToggleWindow('wei') },
   ];
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          exit={{ opacity: 0, y: 10 }}
-          className="fixed bottom-[40px] left-0 w-[400px] h-[480px] bg-gradient-to-b from-[#111111]/70 via-[#0a0a0a]/80 to-[#000000]/90 backdrop-blur-xl border-t border-r border-white/20 rounded-tr-lg z-[9999] shadow-2xl flex flex-col font-sans overflow-visible"
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 18 }}
+          transition={{ duration: 0.18 }}
+          onClick={(event) => event.stopPropagation()} className="fixed bottom-[46px] left-0 z-[140000] flex h-[560px] w-[460px] flex-col overflow-hidden rounded-tr-[18px] border-r border-t border-white/30 bg-[linear-gradient(180deg,rgba(34,54,85,0.9)_0%,rgba(7,11,18,0.96)_100%)] shadow-[0_26px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
         >
-          {/* FIXED USER AVATAR - Breaks out of the top right frame */}
-          <div className="absolute -top-10 right-6 w-20 h-20 bg-white rounded-md border-2 border-gray-400 p-[3px] shadow-[0_5px_15px_rgba(0,0,0,0.5)] z-[10000] overflow-hidden">
-            <div className="w-full h-full bg-gradient-to-b from-blue-300 to-cyan-500 flex items-center justify-center text-5xl">
-               {userImage}
+          <div className="relative flex-1 overflow-hidden border-t border-white/10">
+            <div className="absolute right-6 top-5 flex h-24 w-24 items-center justify-center rounded-[18px] border border-white/75 bg-[linear-gradient(180deg,#f9fdff_0%,#bfd9f6_100%)] text-5xl shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
+              {userImage}
             </div>
-            {/* Glossy overlay for the pic */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none" />
-          </div>
 
-          <div className="flex-1 flex w-full mt-1 border-t border-white/10 overflow-hidden rounded-tr-lg">
-            {/* Left Pane */}
-            <div className="w-[58%] bg-white border-r border-gray-300 flex flex-col p-1 overflow-y-auto">
-              {leftApps.map((item) => (
-                <div key={item.id} onClick={() => onToggleWindow(item.id)} className="flex items-center p-2 rounded hover:bg-gradient-to-b hover:from-[#e4f0fa] hover:to-[#c4def6] border border-transparent hover:border-[#98c5ec] cursor-pointer group transition-all">
-                  <span className="text-3xl w-10 text-center">{item.icon}</span>
-                  <div className="flex flex-col ml-1">
-                    <span className="text-xs font-semibold text-gray-800">{item.label}</span>
-                    <span className="text-[10px] text-gray-500 leading-tight">{item.sub}</span>
-                  </div>
+            <div className="flex h-full">
+              <div className="flex w-[58%] flex-col bg-[linear-gradient(180deg,#ffffff_0%,#eef5fc_100%)] p-2 pr-3 pt-4">
+                {leftApps.map((app) => (
+                  <button key={app.id} type="button" onClick={() => onToggleWindow(app.id)} className="flex items-center gap-3 rounded-[10px] border border-transparent px-3 py-2 text-left hover:border-[#8ab7e5] hover:bg-[linear-gradient(180deg,#eef8ff_0%,#d4e9fb_100%)]">
+                    <span className="text-3xl">{app.icon}</span>
+                    <span>
+                      <span className="block text-xs font-semibold text-slate-800">{app.label}</span>
+                      <span className="block text-[10px] text-slate-500">{app.sub}</span>
+                    </span>
+                  </button>
+                ))}
+                <div className="mt-auto rounded-[10px] border border-[#d7e6f4] bg-white/80 p-3 text-[11px] text-slate-600 shadow-inner">
+                  Tip: Explore Documents, Pictures, and System32 to see the full portfolio shell.
                 </div>
-              ))}
-              <div className="mt-auto p-2 text-xs font-bold text-gray-600 hover:text-blue-700 cursor-pointer flex items-center gap-2">
-                <span className="text-green-600 text-[10px]">▶</span> All Programs
+              </div>
+
+              <div className="flex w-[42%] flex-col gap-1 px-3 pb-4 pt-24 text-white">
+                {rightPane.map((item, index) => {
+                  if ('divider' in item) {
+                    return <div key={`divider-${index}`} className="mx-2 my-1 border-b border-white/12" />;
+                  }
+
+                  return (
+                    <button key={item.label} type="button" onClick={item.action} className="rounded-[8px] px-3 py-2 text-left text-[11px] font-medium hover:bg-white/10">
+                      {item.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Right Pane */}
-            <div className="w-[42%] flex flex-col px-1 py-4 gap-0.5 mt-2 overflow-y-auto">
-              {rightFolders.map((item: any, i: number) => {
-                if (item.divider) return <div key={i} className="border-b border-white/10 mx-3 my-1" />;
-                return (
-                  <div key={i} onClick={item.action} className="flex items-center justify-between cursor-pointer hover:bg-white/10 px-3 py-1.5 rounded transition-colors group">
-                    <span className={`text-white text-[11px] drop-shadow-md ${item.bold ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
-                  </div>
-                );
-              })}
-            </div>
           </div>
 
-          {/* Search Bar / Power Bar */}
-          <div className="h-12 bg-black/40 border-t border-white/20 flex items-center px-4 justify-between shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-            <div className="bg-white rounded-full flex items-center px-3 py-1 w-[220px] border border-gray-500 shadow-inner">
-              <input type="text" placeholder="Start Search" className="bg-transparent text-[11px] outline-none text-gray-700 w-full italic" />
-              <span className="text-blue-500 text-xs cursor-pointer">🔍</span>
+          <div className="flex h-14 items-center justify-between border-t border-white/10 bg-black/20 px-4">
+            <div className="rounded-full border border-white/20 bg-white px-3 py-1 text-xs text-slate-500 shadow-[inset_0_1px_1px_rgba(0,0,0,0.12)]">
+              Start Search
             </div>
-            
-            <div className="flex gap-2 h-6 items-center">
-              <button onClick={onShowShutdown} className="w-8 h-full bg-gradient-to-b from-orange-400 to-red-600 border border-black/60 rounded shadow-md flex items-center justify-center hover:brightness-110 active:scale-95 transition-all">
-                <span className="text-white text-[10px]">🔒</span>
-              </button>
-              <button className="w-6 h-full bg-gradient-to-b from-blue-500 to-blue-800 border border-black/60 rounded shadow-md flex items-center justify-center hover:brightness-110 active:scale-95 transition-all">
-                <span className="text-white text-[8px]">▶</span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={onShowShutdown} className="rounded-full border border-black/50 bg-[linear-gradient(180deg,#ffbe63_0%,#c94916_100%)] px-3 py-1.5 text-xs font-semibold text-white shadow-[0_6px_16px_rgba(0,0,0,0.35)]">
+                Power
               </button>
             </div>
           </div>

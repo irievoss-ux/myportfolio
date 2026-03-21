@@ -1,36 +1,36 @@
 "use client";
-import { useState, useEffect } from 'react';
-import VistaCalendar from './VistaCalendar';
 
-export default function VistaSidebar({ userImage }: any) { // Added prop here
+import { useEffect, useState } from 'react';
+import VistaCalendar from './VistaCalendar';
+import { useVistaProfile } from './providers/VistaProfileProvider';
+
+export default function VistaSidebar() {
   const [time, setTime] = useState(new Date());
+  const { userImage, userName } = useVistaProfile();
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    const timer = window.setInterval(() => setTime(new Date()), 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
   return (
-    <aside className="fixed top-0 right-0 w-[160px] h-full bg-black/10 backdrop-blur-md border-l border-white/20 z-0 flex flex-col items-center pt-8 gap-6 overflow-y-auto">
-      
-      {/* CLOCK */}
-      <div className="w-32 h-32 rounded-full bg-white/10 border border-white/30 flex flex-col items-center justify-center shadow-lg group">
-        <div className="text-white text-2xl font-light drop-shadow-md group-hover:scale-110 transition-transform">
+    <aside className="pointer-events-none fixed right-0 top-0 z-20 flex h-full w-[180px] flex-col items-center gap-6 border-l border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.2),rgba(255,255,255,0.06)_20%,rgba(0,0,0,0.18)_100%)] px-4 pt-7 backdrop-blur-xl">
+      <div className="vista-glass-panel pointer-events-auto w-full rounded-[24px] px-4 py-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+        <div className="text-center text-[11px] uppercase tracking-[0.3em] text-white/60">Sidebar Clock</div>
+        <div className="mt-3 text-center text-[34px] font-extralight leading-none drop-shadow-[0_2px_5px_rgba(0,0,0,0.45)]">
           {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
-        <div className="text-white/60 text-[10px] uppercase tracking-widest font-bold">
-          {time.toLocaleDateString([], { weekday: 'short', day: 'numeric' })}
-        </div>
+        <div className="mt-2 text-center text-[11px] text-white/70">{time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
       </div>
 
-      <VistaCalendar />
+      <div className="pointer-events-auto w-full">
+        <VistaCalendar />
+      </div>
 
-      {/* USER GADGET - Uses your live userImage */}
-      <div className="mt-auto pb-10 flex flex-col items-center gap-2">
-         <span className="text-6xl drop-shadow-lg hover:scale-110 transition-transform cursor-pointer">
-           {userImage}
-         </span>
-         <span className="text-[9px] text-white/30 font-bold tracking-tighter uppercase">Vista Ultimate</span>
+      <div className="pointer-events-auto mt-auto flex w-full flex-col items-center gap-2 pb-7 text-center text-white">
+        <div className="vista-avatar-panel flex h-24 w-24 items-center justify-center rounded-[22px] text-5xl shadow-[0_12px_35px_rgba(0,0,0,0.3)]">{userImage}</div>
+        <div className="text-sm font-semibold drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]">{userName}</div>
+        <div className="text-[10px] uppercase tracking-[0.35em] text-white/40">Ultimate Sidebar</div>
       </div>
     </aside>
   );

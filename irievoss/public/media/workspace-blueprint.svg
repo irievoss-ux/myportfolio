@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#eef6ff"/>
+  <g stroke="#89afd2" stroke-width="2">
+    <path d="M60 80 H1220"/>
+    <path d="M60 160 H1220"/>
+    <path d="M60 240 H1220"/>
+    <path d="M60 320 H1220"/>
+    <path d="M60 400 H1220"/>
+    <path d="M60 480 H1220"/>
+    <path d="M60 560 H1220"/>
+    <path d="M160 40 V680"/>
+    <path d="M360 40 V680"/>
+    <path d="M560 40 V680"/>
+    <path d="M760 40 V680"/>
+    <path d="M960 40 V680"/>
+    <path d="M1160 40 V680"/>
+  </g>
+  <rect x="170" y="140" width="390" height="190" rx="18" fill="#d6ebff" stroke="#4f85bc" stroke-width="4"/>
+  <rect x="610" y="220" width="420" height="220" rx="18" fill="#c9f1df" stroke="#3f9f78" stroke-width="4"/>
+  <rect x="410" y="470" width="300" height="120" rx="18" fill="#ffe6cf" stroke="#d28b4a" stroke-width="4"/>
+  <text x="120" y="110" font-family="Segoe UI, sans-serif" font-size="58" fill="#245a92">Portfolio Architecture Map</text>
+  <text x="200" y="220" font-family="Segoe UI, sans-serif" font-size="34" fill="#245a92">Broadcasting</text>
+  <text x="650" y="320" font-family="Segoe UI, sans-serif" font-size="34" fill="#2b7b5f">Design Systems</text>
+  <text x="450" y="540" font-family="Segoe UI, sans-serif" font-size="30" fill="#b06e31">Community Events</text>
+</svg>

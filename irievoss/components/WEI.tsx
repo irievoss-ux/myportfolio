@@ -1,44 +1,52 @@
 "use client";
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
+
+interface ScoreCardProps {
+  label: string;
+  desc: string;
+  score: number;
+}
 
 export default function WEI() {
   const [isAssessing, setIsAssessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("");
-  const [scores, setScores] = useState({
+  const [status, setStatus] = useState('Ready to evaluate system performance.');
+  const scores = {
     cpu: 5.9,
     ram: 5.8,
     gpu: 5.9,
     gaming: 5.9,
-    disk: 5.7
-  });
+    disk: 5.7,
+  };
 
   const runAssessment = () => {
     setIsAssessing(true);
     setProgress(0);
     const messages = [
-      "Assessing Processor performance...",
-      "Tuning system memory...",
-      "Testing Aero Graphics capabilities...",
-      "Assessing Direct3D performance...",
-      "Measuring disk transfer rate...",
-      "Finalizing scores..."
+      'Assessing processor performance...',
+      'Tuning system memory...',
+      'Testing Aero graphics capabilities...',
+      'Assessing Direct3D performance...',
+      'Measuring disk transfer rate...',
+      'Finalizing scores...',
     ];
 
     let currentStep = 0;
     const interval = setInterval(() => {
-      setProgress(prev => {
+      setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           setIsAssessing(false);
+          setStatus('Assessment complete. Scores are current.');
           return 100;
         }
-        const newProgress = prev + 2;
-        if (newProgress % 18 === 0) {
+        const next = prev + 2;
+        if (next % 18 === 0) {
           currentStep++;
-          setStatus(messages[currentStep] || messages[messages.length - 1]);
+          setStatus(messages[currentStep] ?? messages[messages.length - 1]);
         }
-        return newProgress;
+        return next;
       });
     }, 100);
   };
@@ -46,63 +54,60 @@ export default function WEI() {
   const baseScore = Math.min(scores.cpu, scores.ram, scores.gpu, scores.gaming, scores.disk);
 
   return (
-    <div className="flex flex-col h-full bg-[#f0f0f0] font-sans text-xs select-none overflow-hidden">
-      {/* HEADER */}
-      <div className="bg-white p-6 border-b border-gray-300 shrink-0">
-        <h1 className="text-2xl font-light text-blue-900 mb-1">Performance Information and Tools</h1>
-        <p className="text-gray-500">Rate and improve your computer's performance.</p>
+    <div className="flex h-full flex-col overflow-hidden bg-[#f0f0f0] font-sans text-xs select-none">
+      <div className="shrink-0 border-b border-gray-300 bg-white p-6">
+        <h1 className="mb-1 text-2xl font-light text-blue-900">Performance Information and Tools</h1>
+        <p className="text-gray-500">Rate and improve your computer&apos;s performance.</p>
       </div>
 
       {isAssessing ? (
-        /* ASSESSMENT LOADING SCREEN */
-        <div className="flex-1 flex flex-col items-center justify-center p-10 bg-white">
+        <div className="flex flex-1 flex-col items-center justify-center bg-white p-10">
           <div className="w-full max-w-md">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Assessing System Performance</h2>
-            <p className="mb-2 text-gray-600 italic">{status}</p>
-            <div className="w-full h-5 bg-gray-200 border border-gray-400 rounded-sm overflow-hidden shadow-inner">
-               <div className="h-full bg-gradient-to-r from-green-400 via-green-300 to-green-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+            <h2 className="mb-4 text-lg font-bold text-gray-800">Assessing System Performance</h2>
+            <p className="mb-2 italic text-gray-600">{status}</p>
+            <div className="h-5 w-full overflow-hidden rounded-sm border border-gray-400 bg-gray-200 shadow-inner">
+              <div className="h-full bg-gradient-to-r from-green-400 via-green-300 to-green-500 transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
             <p className="mt-4 text-[10px] text-gray-400">This may take a few minutes. Your screen may flicker.</p>
           </div>
         </div>
       ) : (
-        /* MAIN SCORE VIEW */
-        <div className="flex-1 p-6 overflow-y-auto space-y-6">
-          <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-100 text-left border-b border-gray-300">
-                <tr>
-                  <th className="p-3 font-bold text-gray-700">Component</th>
-                  <th className="p-3 font-bold text-gray-700">What is rated</th>
-                  <th className="p-3 font-bold text-gray-700 text-center">Subscore</th>
-                  <th className="p-3 font-bold text-gray-700 text-center bg-blue-50/50">Base score</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                <ScoreRow label="Processor" desc="Calculations per second" score={scores.cpu} />
-                <ScoreRow label="Memory (RAM)" desc="Memory operations per second" score={scores.ram} />
-                <ScoreRow label="Graphics" desc="Desktop performance for Windows Aero" score={scores.gpu} />
-                <ScoreRow label="Gaming graphics" desc="3D business and gaming graphics performance" score={scores.gaming} />
-                <ScoreRow label="Primary hard disk" desc="Disk data transfer rate" score={scores.disk} />
-              </tbody>
-            </table>
+        <div className="flex-1 space-y-6 overflow-y-auto p-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_180px]">
+            <div className="overflow-hidden rounded border border-gray-300 bg-white shadow-sm">
+              <table className="w-full border-collapse">
+                <thead className="border-b border-gray-300 bg-gray-100 text-left">
+                  <tr>
+                    <th className="p-3 font-bold text-gray-700">Component</th>
+                    <th className="p-3 font-bold text-gray-700">What is rated</th>
+                    <th className="p-3 text-center font-bold text-gray-700">Subscore</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  <ScoreCard label="Processor" desc="Calculations per second" score={scores.cpu} />
+                  <ScoreCard label="Memory (RAM)" desc="Memory operations per second" score={scores.ram} />
+                  <ScoreCard label="Graphics" desc="Desktop performance for Windows Aero" score={scores.gpu} />
+                  <ScoreCard label="Gaming graphics" desc="3D business and gaming graphics performance" score={scores.gaming} />
+                  <ScoreCard label="Primary hard disk" desc="Disk data transfer rate" score={scores.disk} />
+                </tbody>
+              </table>
+            </div>
 
-            {/* THE BIG BASE SCORE BOX */}
-            <div className="absolute right-10 top-[185px] w-24 h-24 bg-gradient-to-br from-blue-400 to-blue-700 border-2 border-blue-900 rounded shadow-2xl flex flex-col items-center justify-center text-white">
-               <span className="text-4xl font-bold drop-shadow-md">{baseScore}</span>
-               <span className="text-[8px] uppercase font-bold tracking-tighter mt-1">Base score</span>
+            <div className="flex h-[180px] flex-col items-center justify-center rounded border-2 border-blue-900 bg-gradient-to-br from-blue-400 to-blue-700 text-white shadow-2xl">
+              <span className="text-5xl font-bold drop-shadow-md">{baseScore}</span>
+              <span className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em]">Base score</span>
             </div>
           </div>
 
-          <div className="flex justify-between items-center bg-blue-50 p-4 border border-blue-200 rounded">
+          <div className="flex items-center justify-between rounded border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🛡️</span>
-              <span className="text-blue-900 font-medium">Your scores are up to date.</span>
+              <div>
+                <div className="font-medium text-blue-900">Your scores are up to date.</div>
+                <div className="text-[10px] text-blue-700">{status}</div>
+              </div>
             </div>
-            <button 
-              onClick={runAssessment}
-              className="px-4 py-1 border border-gray-400 bg-gradient-to-b from-white to-gray-200 hover:brightness-105 rounded-sm shadow-sm font-medium"
-            >
+            <button onClick={runAssessment} className="rounded-sm border border-gray-400 bg-gradient-to-b from-white to-gray-200 px-4 py-1 font-medium shadow-sm hover:brightness-105">
               Re-run the assessment
             </button>
           </div>
@@ -112,13 +117,12 @@ export default function WEI() {
   );
 }
 
-function ScoreRow({ label, desc, score }: any) {
+function ScoreCard({ label, desc, score }: ScoreCardProps) {
   return (
     <tr>
       <td className="p-3 font-bold text-gray-800">{label}</td>
       <td className="p-3 text-gray-500">{desc}</td>
-      <td className="p-3 text-center font-bold text-lg">{score}</td>
-      <td className="bg-blue-50/20" />
+      <td className="p-3 text-center text-lg font-bold">{score}</td>
     </tr>
   );
 }

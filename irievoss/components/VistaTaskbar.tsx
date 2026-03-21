@@ -1,101 +1,70 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { TwitchStatus } from './GlobalFX';
 
-interface TaskbarProps {
-  windows: any;
-  onToggleStart: () => void;
-  onFocusWindow: (id: string) => void;
-  aeroColor: string;
+import { useEffect, useState } from 'react';
+
+interface WindowRecord {
+  title: string;
+  icon: string;
+  isOpen: boolean;
+  z: number;
 }
 
-export default function VistaTaskbar({ windows, onToggleStart, onFocusWindow, aeroColor }: TaskbarProps) {
-  const [time, setTime] = useState("");
-  const [volumeOpen, setVolumeOpen] = useState(false);
-  const [volume, setVolume] = useState(75);
+interface VistaTaskbarProps {
+  windows: Record<string, WindowRecord>;
+  activeWindowId: string | null;
+  aeroColor: string;
+  onToggleStart: () => void;
+  onFocusWindow: (id: string) => void;
+}
+
+export default function VistaTaskbar({ windows, activeWindowId, aeroColor, onToggleStart, onFocusWindow }: VistaTaskbarProps) {
+  const [time, setTime] = useState('');
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    }, 1000);
-    return () => clearInterval(t);
+    const tick = () => setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
+  const taskbarWindows = Object.entries(windows)
+    .filter(([, windowState]) => windowState.isOpen)
+    .sort((a, b) => a[1].z - b[1].z);
+
   return (
-    <nav 
-      className={`fixed bottom-0 w-full h-[40px] backdrop-blur-xl border-t border-white/20 flex justify-between items-center z-[10000] px-2 transition-colors duration-500 shadow-[0_-2px_10px_rgba(0,0,0,0.5)] ${aeroColor === 'ruby' ? 'bg-red-950/80' : aeroColor === 'emerald' ? 'bg-emerald-950/80' : 'bg-black/80'}`}
-    >
-      {/* --- START ORB AREA --- */}
-      <div className="flex items-center h-full relative">
-        <button 
-          onClick={(e) => { e.stopPropagation(); onToggleStart(); }} 
-          className={`absolute -bottom-[2px] -left-1 w-[54px] h-[54px] rounded-full border-2 border-white/60 flex items-center justify-center transition-all z-50 shadow-[inset_0_2px_10px_rgba(255,255,255,0.8),0_0_15px_rgba(0,0,0,0.5)] hover:brightness-125 active:scale-95 ${aeroColor === 'ruby' ? 'bg-red-600' : aeroColor === 'emerald' ? 'bg-emerald-600' : 'bg-[#1a7bc9]'}`}
-        >
-          <div className="grid grid-cols-2 gap-[2px] w-5 h-5 opacity-90 drop-shadow-md">
-            <div className="bg-[#ff5722] rounded-tl-sm skew-y-3" />
-            <div className="bg-[#4caf50] rounded-tr-sm -skew-y-3" />
-            <div className="bg-[#03a9f4] rounded-bl-sm -skew-y-3" />
-            <div className="bg-[#ffc107] rounded-br-sm skew-y-3" />
+    <nav onClick={(event) => event.stopPropagation()} className={`fixed inset-x-0 bottom-0 z-[120000] flex h-[46px] items-center justify-between border-t border-white/25 px-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl ${aeroColor === 'ruby' ? 'bg-[linear-gradient(180deg,rgba(114,25,42,0.9),rgba(34,7,14,0.92))]' : aeroColor === 'emerald' ? 'bg-[linear-gradient(180deg,rgba(18,93,84,0.9),rgba(5,28,25,0.94))]' : aeroColor === 'graphite' ? 'bg-[linear-gradient(180deg,rgba(62,72,85,0.9),rgba(16,20,26,0.96))]' : 'bg-[linear-gradient(180deg,rgba(40,95,160,0.9),rgba(9,25,47,0.96))]'}`}>
+      <div className="flex h-full items-center gap-3">
+        <button type="button" onClick={(event) => { event.stopPropagation(); onToggleStart(); }} className="vista-orb relative -mt-4 flex h-[58px] w-[58px] items-center justify-center rounded-full border border-white/70 text-white shadow-[0_12px_22px_rgba(0,0,0,0.4)] transition-transform hover:scale-105 active:scale-95">
+          <div className="grid h-5 w-5 grid-cols-2 gap-[2px] opacity-95">
+            <div className="rounded-tl-sm bg-[#f97316]" />
+            <div className="rounded-tr-sm bg-[#4ade80]" />
+            <div className="rounded-bl-sm bg-[#38bdf8]" />
+            <div className="rounded-br-sm bg-[#facc15]" />
           </div>
         </button>
-        
-        {/* --- WINDOW TABS --- */}
-        <div className="ml-16 flex gap-1 h-full py-1">
-          {Object.entries(windows).map(([id, win]: any) => win.isOpen && (
-            <button 
-              key={id} 
-              onClick={() => onFocusWindow(id)} 
-              className="px-3 min-w-[120px] max-w-[160px] flex items-center gap-2 bg-gradient-to-b from-white/10 to-transparent hover:from-white/20 border border-white/10 rounded-sm text-white text-xs backdrop-blur-sm shadow-inner truncate transition-all group"
+
+        <div className="flex h-full items-center gap-1 overflow-x-auto pr-2">
+          {taskbarWindows.map(([id, windowState]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={(event) => { event.stopPropagation(); onFocusWindow(id); }}
+              className={`flex h-[34px] min-w-[138px] max-w-[170px] items-center gap-2 rounded-[7px] border px-3 text-left text-xs text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-all ${activeWindowId === id ? 'border-white/40 bg-white/20' : 'border-white/15 bg-white/8 hover:bg-white/14'}`}
             >
-              <span className="text-[10px] group-hover:scale-110 transition-transform">{win.icon}</span>
-              <span className="truncate font-medium">{win.title}</span>
+              <span className="text-sm">{windowState.icon}</span>
+              <span className="truncate font-medium">{windowState.title}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* --- COMMAND CENTER (SYSTEM TRAY) --- */}
-      <div className="flex items-center h-full">
-        
-        <div className="flex gap-3 items-center px-4 h-full border-l border-white/10">
-          <TwitchStatus isLive={true} />
-          
-          {/* Network Icon */}
-          <div className="text-white opacity-80 hover:opacity-100 cursor-default text-[10px]" title="Connected to IrieNetwork">🌐</div>
-          
-          {/* Volume Control */}
-          <div className="relative">
-            <div 
-              onClick={() => setVolumeOpen(!volumeOpen)}
-              className="text-white opacity-80 hover:opacity-100 cursor-pointer text-xs"
-            >
-              🔊
-            </div>
-            {volumeOpen && (
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-10 h-32 bg-black/80 backdrop-blur-xl border border-white/20 rounded-t-md p-2 flex flex-col items-center gap-2 shadow-2xl">
-                <input 
-                  type="range" min="0" max="100" value={volume} 
-                  onChange={(e) => setVolume(parseInt(e.target.value))}
-                  className="appearance-none w-24 -rotate-90 bg-gray-700 h-1 rounded-full cursor-pointer mt-10 accent-blue-500" 
-                />
-                <span className="text-[10px] text-white font-bold">{volume}%</span>
-              </div>
-            )}
-          </div>
-
-          {/* Time & Date */}
-          <div className="flex flex-col items-center justify-center min-w-[60px] cursor-default">
-            <div className="text-[11px] font-bold text-white drop-shadow-sm">{time}</div>
-            <div className="text-[9px] text-white/60 font-medium">21.03.2026</div>
-          </div>
+      <div className="flex h-full items-center gap-4 rounded-[8px] border border-white/10 bg-black/15 px-4 text-white">
+        <span className="text-xs opacity-80">🌐</span>
+        <span className="text-xs opacity-80">🔊</span>
+        <div className="text-right leading-tight">
+          <div className="text-[11px] font-semibold">{time}</div>
+          <div className="text-[10px] text-white/60">21 Mar 2006</div>
         </div>
-
-        {/* SHOW DESKTOP BUTTON (The tiny vertical bar at the end) */}
-        <div 
-          className="w-2 h-full border-l border-white/20 bg-white/5 hover:bg-white/20 cursor-pointer transition-colors"
-          title="Show Desktop"
-          onClick={() => {}} 
-        />
       </div>
     </nav>
   );
