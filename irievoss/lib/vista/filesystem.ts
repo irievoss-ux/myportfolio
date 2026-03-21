@@ -1,6 +1,6 @@
 import { HINTS_DATA } from '@/components/Hints';
 
-export type VistaNodeType = 'root' | 'drive' | 'folder' | 'text' | 'video' | 'app' | 'system';
+export type VistaNodeType = 'root' | 'drive' | 'folder' | 'text' | 'video' | 'image' | 'app' | 'system';
 
 interface VistaNodeBase {
   name: string;
@@ -28,11 +28,16 @@ export interface VistaVideoNode extends VistaNodeBase {
   duration: string;
 }
 
+export interface VistaImageNode extends VistaNodeBase {
+  type: 'image';
+  url: string;
+}
+
 export interface VistaAppNode extends VistaNodeBase {
   type: 'app';
   windowId: string;
   requiresElevation?: boolean;
-  command?: string;
+  launchPath?: VistaPath;
 }
 
 export interface VistaSystemNode extends VistaNodeBase {
@@ -40,7 +45,7 @@ export interface VistaSystemNode extends VistaNodeBase {
   content: string;
 }
 
-export type VistaNode = VistaFolderNode | VistaTextNode | VistaVideoNode | VistaAppNode | VistaSystemNode;
+export type VistaNode = VistaFolderNode | VistaTextNode | VistaVideoNode | VistaImageNode | VistaAppNode | VistaSystemNode;
 export type VistaPath = string[];
 
 const stamp = '11/08/2006  09:45 PM';
@@ -81,6 +86,31 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                     description: 'Launch Internet Explorer',
                     windowId: 'browser',
                   },
+                  {
+                    name: 'branding.txt',
+                    type: 'text',
+                    icon: '📄',
+                    size: '2 KB',
+                    modified: stamp,
+                    content: 'Internet Explorer is now your guided portfolio portal. Tabs, settings, and shortcuts all work.',
+                  },
+                ],
+              },
+              {
+                name: 'Windows Mail',
+                type: 'folder',
+                icon: '📁',
+                modified: stamp,
+                children: [
+                  {
+                    name: 'WinMail.exe',
+                    type: 'app',
+                    icon: '✉️',
+                    size: '2.6 MB',
+                    modified: stamp,
+                    description: 'Compose a message to Irie',
+                    windowId: 'mail',
+                  },
                 ],
               },
               {
@@ -106,6 +136,16 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                 icon: '📁',
                 modified: stamp,
                 children: [
+                  {
+                    name: 'Games Explorer.exe',
+                    type: 'app',
+                    icon: '🎮',
+                    size: '202 KB',
+                    modified: stamp,
+                    description: 'Open the games library',
+                    windowId: 'computer',
+                    launchPath: ['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Games'],
+                  },
                   {
                     name: 'Minesweeper.exe',
                     type: 'app',
@@ -144,7 +184,8 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                         size: '1 KB',
                         modified: stamp,
                         description: 'Desktop shortcut',
-                        windowId: 'minesweeper',
+                        windowId: 'computer',
+                        launchPath: ['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Games'],
                       },
                     ],
                   },
@@ -160,20 +201,23 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
                         icon: '📄',
                         size: '3 KB',
                         modified: stamp,
-                        content: `IRIE PROFILE
-
-Display Name: Irie
-Role: Streamer / tactician / builder
-Favorite shell: Windows Vista Ultimate
-Notes: The shell is clean on purpose. Everything else lives in the file system.`,
+                        content: `IRIE PROFILE\n\nDisplay Name: Irie\nRole: Broadcaster, tactician, product-minded builder\nFavorite shell: Windows Vista Ultimate\nNote: Every shortcut in this shell is meant to lead to part of the portfolio.`,
                       },
                       {
-                        name: 'Aero Moodboard.txt',
+                        name: 'Experience.txt',
+                        type: 'text',
+                        icon: '📄',
+                        size: '4 KB',
+                        modified: stamp,
+                        content: `EXPERIENCE SNAPSHOT\n\n• Live broadcast strategy and on-air hosting\n• Community-first product thinking\n• High-fidelity interface design and front-end systems\n• Event ops, creative direction, and content packaging`,
+                      },
+                      {
+                        name: 'Contact Card.txt',
                         type: 'text',
                         icon: '📄',
                         size: '2 KB',
                         modified: stamp,
-                        content: 'Blurred glass. Soft bloom. Dense shadows. Vista before minimalism became sterile.',
+                        content: `CONTACT\n\nEmail: irievosscontact@gmail.com\nPreferred: Windows Mail inside this shell\nAvailability: Open for collabs, contracts, and creative partnerships`,
                       },
                       {
                         name: HINTS_DATA.name,
@@ -201,12 +245,22 @@ Notes: The shell is clean on purpose. Everything else lives in the file system.`
                     modified: stamp,
                     children: [
                       {
-                        name: 'SelfPortrait.txt',
-                        type: 'text',
-                        icon: '📄',
-                        size: '1 KB',
+                        name: 'Desktop Memory.jpg',
+                        type: 'image',
+                        icon: '🖼️',
+                        size: '188 KB',
                         modified: stamp,
-                        content: 'Photo Gallery is intentionally dormant. Vista-era text galleries still count.',
+                        description: 'A Vista-style portfolio wallpaper memory.',
+                        url: '/media/desktop-memory.svg',
+                      },
+                      {
+                        name: 'Workspace Blueprint.png',
+                        type: 'image',
+                        icon: '🖼️',
+                        size: '201 KB',
+                        modified: stamp,
+                        description: 'A quick map of the portfolio pillars.',
+                        url: '/media/workspace-blueprint.svg',
                       },
                     ],
                   },
@@ -296,7 +350,6 @@ Notes: The shell is clean on purpose. Everything else lives in the file system.`
                     description: 'Launch elevated command prompt',
                     windowId: 'terminal',
                     requiresElevation: true,
-                    command: 'cmd',
                   },
                   {
                     name: 'Taskmgr.exe',
@@ -316,6 +369,26 @@ Notes: The shell is clean on purpose. Everything else lives in the file system.`
                     modified: stamp,
                     description: 'Launch Control Panel',
                     windowId: 'controlpanel',
+                    requiresElevation: true,
+                  },
+                  {
+                    name: 'winsat.exe',
+                    type: 'app',
+                    icon: '📈',
+                    size: '128 KB',
+                    modified: stamp,
+                    description: 'Launch performance assessment',
+                    windowId: 'wei',
+                    requiresElevation: true,
+                  },
+                  {
+                    name: 'systemproperties.exe',
+                    type: 'app',
+                    icon: '🧾',
+                    size: '190 KB',
+                    modified: stamp,
+                    description: 'Open System Properties',
+                    windowId: 'system',
                     requiresElevation: true,
                   },
                   {
@@ -359,10 +432,7 @@ Notes: The shell is clean on purpose. Everything else lives in the file system.`
                 icon: '📄',
                 size: '1 KB',
                 modified: stamp,
-                content: `[fonts]
-Segoe UI=segoeui.ttf
-[shell]
-Shell=explorer.exe`,
+                content: `[fonts]\nSegoe UI=segoeui.ttf\n[shell]\nShell=explorer.exe`,
               },
             ],
           },
@@ -391,6 +461,15 @@ Shell=explorer.exe`,
                 duration: '00:13',
                 description: 'Archived local video',
                 url: '/media/aurora-dreamscape.mp4',
+              },
+              {
+                name: 'Broadcast Deck.png',
+                type: 'image',
+                icon: '🖼️',
+                size: '201 KB',
+                modified: stamp,
+                description: 'Portfolio blueprint export',
+                url: '/media/workspace-blueprint.svg',
               },
             ],
           },

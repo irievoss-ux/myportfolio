@@ -4,21 +4,25 @@ import { useMemo, useState } from 'react';
 import ControlPanel from '@/components/ControlPanel';
 import FileExplorer from '@/components/FileExplorer';
 import LoginScreen from '@/components/LoginScreen';
+import MailWindow from '@/components/MailWindow';
 import MediaPlayer from '@/components/MediaPlayer';
 import Minesweeper from '@/components/Minesweeper';
 import Netscape from '@/components/Netscape';
 import Notepad from '@/components/Notepad';
+import PhotoViewer from '@/components/PhotoViewer';
 import RetroWindow from '@/components/RetroWindow';
 import RightClickMenu from '@/components/RightClickMenu';
 import ShutdownDialog from '@/components/ShutdownDialog';
 import ShutdownScreen from '@/components/ShutdownScreen';
 import StartMenu from '@/components/StartMenu';
+import SystemProperties from '@/components/SystemProperties';
 import TaskManager from '@/components/TaskManager';
 import Terminal from '@/components/Terminal';
 import UACPopup from '@/components/UACPopup';
 import VistaSidebar from '@/components/VistaSidebar';
 import VistaTaskbar from '@/components/VistaTaskbar';
-import { createVistaFileSystem, getNodeAtPath, type VistaNode, type VistaPath, type VistaVideoNode } from '@/lib/vista/filesystem';
+import WEI from '@/components/WEI';
+import { createVistaFileSystem, getNodeAtPath, type VistaAppNode, type VistaImageNode, type VistaNode, type VistaPath, type VistaVideoNode } from '@/lib/vista/filesystem';
 import { useVistaProfile } from './providers/VistaProfileProvider';
 
 interface WindowState {
@@ -31,31 +35,39 @@ interface WindowState {
 }
 
 const windowBlueprints: Record<string, Omit<WindowState, 'isOpen' | 'z' | 'currentFile'>> = {
-  browser: { title: 'Network', icon: '🌐' },
+  browser: { title: 'Internet Explorer', icon: '🌐' },
   computer: { title: 'Computer', icon: '🖥️' },
   media: { title: 'Windows Media Player', icon: '🎞️' },
+  photo: { title: 'Windows Photo Gallery', icon: '🖼️' },
   notepad: { title: 'Notepad', icon: '📄' },
   minesweeper: { title: 'Games Explorer', icon: '🎮' },
   controlpanel: { title: 'Control Panel', icon: '⚙️', requiresUac: true },
   terminal: { title: 'Command Prompt', icon: '🖥️', requiresUac: true },
   taskmanager: { title: 'Task Manager', icon: '📊', requiresUac: true },
+  mail: { title: 'Windows Mail', icon: '✉️' },
+  system: { title: 'System', icon: '🧾', requiresUac: true },
+  wei: { title: 'Performance Information and Tools', icon: '📈', requiresUac: true },
 };
 
 const windowDefaults: Record<string, { x: number; y: number; w: number; h: number }> = {
-  browser: { x: 170, y: 60, w: 920, h: 650 },
-  computer: { x: 96, y: 72, w: 840, h: 560 },
-  media: { x: 250, y: 120, w: 720, h: 520 },
-  notepad: { x: 220, y: 140, w: 580, h: 420 },
-  minesweeper: { x: 380, y: 160, w: 360, h: 470 },
-  controlpanel: { x: 160, y: 92, w: 760, h: 560 },
+  browser: { x: 150, y: 50, w: 980, h: 680 },
+  computer: { x: 92, y: 70, w: 900, h: 580 },
+  media: { x: 260, y: 120, w: 760, h: 560 },
+  photo: { x: 240, y: 100, w: 760, h: 560 },
+  notepad: { x: 220, y: 140, w: 600, h: 440 },
+  minesweeper: { x: 410, y: 140, w: 360, h: 470 },
+  controlpanel: { x: 160, y: 92, w: 820, h: 600 },
   terminal: { x: 240, y: 150, w: 660, h: 420 },
-  taskmanager: { x: 300, y: 120, w: 480, h: 430 },
+  taskmanager: { x: 300, y: 120, w: 500, h: 460 },
+  mail: { x: 220, y: 110, w: 720, h: 560 },
+  system: { x: 210, y: 100, w: 760, h: 520 },
+  wei: { x: 200, y: 100, w: 820, h: 560 },
 };
 
 const desktopIcons = [
-  { id: 'computer', label: 'Computer', icon: '🖥️', action: 'window' as const },
-  { id: 'browser', label: 'Network', icon: '🌐', action: 'window' as const },
-  { id: 'minesweeper', label: 'Games', icon: '🎮', action: 'window' as const },
+  { id: 'computer', label: 'Computer', icon: '🖥️', kind: 'window' as const },
+  { id: 'browser', label: 'Network', icon: '🌐', kind: 'window' as const },
+  { label: 'Games', icon: '🎮', kind: 'path' as const, path: ['Computer', 'OSDisk (C:)', 'Users', 'Irie', 'Games'] },
 ];
 
 function createInitialWindows(): Record<string, WindowState> {
@@ -73,7 +85,7 @@ function createInitialWindows(): Record<string, WindowState> {
 }
 
 export default function VistaShell() {
-  const { accountFolder } = useVistaProfile();
+  const { accountFolder, userName } = useVistaProfile();
   const fileSystem = useMemo(() => createVistaFileSystem(accountFolder), [accountFolder]);
   const [isLocked, setIsLocked] = useState(true);
   const [isOff, setIsOff] = useState(false);
@@ -94,6 +106,11 @@ export default function VistaShell() {
     twilight: 'radial-gradient(circle at top, rgba(255,255,255,0.14), transparent 30%), linear-gradient(135deg, #1d274c 0%, #344277 32%, #8c4f7b 70%, #1b1020 100%)',
   };
 
+  const determineNextActive = (states: Record<string, WindowState>) => {
+    const openWindows = Object.entries(states).filter(([, state]) => state.isOpen).sort((a, b) => b[1].z - a[1].z);
+    return openWindows[0]?.[0] ?? null;
+  };
+
   const focusWindow = (windowId: string) => {
     setWindows((current) => ({
       ...current,
@@ -103,11 +120,16 @@ export default function VistaShell() {
     setNextZ((value) => value + 1);
   };
 
-  const openWindow = (windowId: string, options?: { currentFile?: VistaNode | null }) => {
+  const openPathInExplorer = (path: VistaPath) => {
+    setExplorerPath(path);
+    openWindow('computer');
+  };
+
+  const openWindow = (windowId: string, options?: { currentFile?: VistaNode | null; bypassUac?: boolean }) => {
     const windowConfig = windows[windowId];
     if (!windowConfig) return;
 
-    if (windowConfig.requiresUac && !windowConfig.isOpen) {
+    if (windowConfig.requiresUac && !windowConfig.isOpen && !options?.bypassUac) {
       setUac({ active: true, windowId });
       setStartOpen(false);
       return;
@@ -128,21 +150,24 @@ export default function VistaShell() {
   };
 
   const closeWindow = (windowId: string) => {
-    setWindows((current) => ({
-      ...current,
-      [windowId]: { ...current[windowId], isOpen: false },
-    }));
-    setActiveWindowId((current) => (current === windowId ? null : current));
+    setWindows((current) => {
+      const nextState = {
+        ...current,
+        [windowId]: { ...current[windowId], isOpen: false },
+      };
+      setActiveWindowId(determineNextActive(nextState));
+      return nextState;
+    });
   };
 
-  const openPathInExplorer = (path: VistaPath) => {
-    setExplorerPath(path);
-    openWindow('computer');
-  };
-
-  const handleOpenNode = (node: VistaNode, parentPath: VistaPath) => {
+  const handleOpenNode = (node: VistaNode) => {
     if (node.type === 'video') {
       openWindow('media', { currentFile: node });
+      return;
+    }
+
+    if (node.type === 'image') {
+      openWindow('photo', { currentFile: node });
       return;
     }
 
@@ -152,11 +177,12 @@ export default function VistaShell() {
     }
 
     if (node.type === 'app') {
-      if (node.windowId === 'computer') {
-        openPathInExplorer(parentPath);
+      const appNode = node as VistaAppNode;
+      if (appNode.launchPath) {
+        openPathInExplorer(appNode.launchPath);
         return;
       }
-      openWindow(node.windowId);
+      openWindow(appNode.windowId);
     }
   };
 
@@ -164,15 +190,8 @@ export default function VistaShell() {
     if (!uac.windowId) return;
     const windowId = uac.windowId;
     setUac({ active: false, windowId: null });
-    setWindows((current) => ({
-      ...current,
-      [windowId]: { ...current[windowId], isOpen: true, z: nextZ },
-    }));
-    setActiveWindowId(windowId);
-    setNextZ((value) => value + 1);
+    openWindow(windowId, { bypassUac: true });
   };
-
-  const onDesktopIcon = (windowId: string) => openWindow(windowId);
 
   const hintsNode = getNodeAtPath(fileSystem, ['Computer', 'OSDisk (C:)', 'Users', accountFolder, 'Documents', 'HINTS.txt']);
 
@@ -194,18 +213,18 @@ export default function VistaShell() {
       }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.28),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_40%,rgba(0,0,0,0.12))]" />
-      <div className={`absolute inset-0 pointer-events-none transition duration-700 ${aeroColor === 'ruby' ? 'bg-red-500/12' : aeroColor === 'emerald' ? 'bg-emerald-400/12' : aeroColor === 'graphite' ? 'bg-slate-600/18' : 'bg-cyan-300/10'}`} />
+      <div className={`pointer-events-none absolute inset-0 transition duration-700 ${aeroColor === 'ruby' ? 'bg-red-500/12' : aeroColor === 'emerald' ? 'bg-emerald-400/12' : aeroColor === 'graphite' ? 'bg-slate-600/18' : 'bg-cyan-300/10'}`} />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(0,0,0,0.15)_100%)]" />
 
       <VistaSidebar />
 
-      <div className="relative z-10 flex h-full w-full items-start p-7 pr-[210px] pb-20">
+      <div className="relative z-10 flex h-full w-full items-start p-7 pb-20 pr-[210px]">
         <div className="grid gap-6">
           {desktopIcons.map((shortcut) => (
             <button
-              key={shortcut.id}
+              key={shortcut.label}
               type="button"
-              onDoubleClick={() => onDesktopIcon(shortcut.id)}
+              onDoubleClick={() => shortcut.kind === 'window' ? openWindow(shortcut.id) : openPathInExplorer(shortcut.path as VistaPath)}
               onClick={(event) => event.stopPropagation()}
               className="group flex w-22 flex-col items-center gap-2 rounded-[14px] px-2 py-1 text-center"
             >
@@ -223,11 +242,15 @@ export default function VistaShell() {
       </RetroWindow>
 
       <RetroWindow id="browser" icon={windows.browser.icon} title={windows.browser.title} isOpen={windows.browser.isOpen} isActive={activeWindowId === 'browser'} zIndex={windows.browser.z} defaultX={windowDefaults.browser.x} defaultY={windowDefaults.browser.y} defaultW={windowDefaults.browser.w} defaultH={windowDefaults.browser.h} onClose={() => closeWindow('browser')} onFocus={() => focusWindow('browser')}>
-        <Netscape />
+        <Netscape onOpenWindow={openWindow} onOpenPath={openPathInExplorer} />
       </RetroWindow>
 
       <RetroWindow id="media" icon={windows.media.icon} title={windows.media.currentFile?.name ? `${windows.media.currentFile.name} - Windows Media Player` : windows.media.title} isOpen={windows.media.isOpen} isActive={activeWindowId === 'media'} zIndex={windows.media.z} defaultX={windowDefaults.media.x} defaultY={windowDefaults.media.y} defaultW={windowDefaults.media.w} defaultH={windowDefaults.media.h} onClose={() => closeWindow('media')} onFocus={() => focusWindow('media')}>
         <MediaPlayer file={(windows.media.currentFile as VistaVideoNode | null) ?? null} />
+      </RetroWindow>
+
+      <RetroWindow id="photo" icon={windows.photo.icon} title={windows.photo.currentFile?.name ? `${windows.photo.currentFile.name} - Photo Gallery` : windows.photo.title} isOpen={windows.photo.isOpen} isActive={activeWindowId === 'photo'} zIndex={windows.photo.z} defaultX={windowDefaults.photo.x} defaultY={windowDefaults.photo.y} defaultW={windowDefaults.photo.w} defaultH={windowDefaults.photo.h} onClose={() => closeWindow('photo')} onFocus={() => focusWindow('photo')}>
+        <PhotoViewer file={(windows.photo.currentFile as VistaImageNode | null) ?? null} />
       </RetroWindow>
 
       <RetroWindow id="notepad" icon={windows.notepad.icon} title={windows.notepad.currentFile?.name ? `${windows.notepad.currentFile.name} - Notepad` : windows.notepad.title} isOpen={windows.notepad.isOpen} isActive={activeWindowId === 'notepad'} zIndex={windows.notepad.z} defaultX={windowDefaults.notepad.x} defaultY={windowDefaults.notepad.y} defaultW={windowDefaults.notepad.w} defaultH={windowDefaults.notepad.h} onClose={() => closeWindow('notepad')} onFocus={() => focusWindow('notepad')}>
@@ -239,7 +262,7 @@ export default function VistaShell() {
       </RetroWindow>
 
       <RetroWindow id="controlpanel" icon={windows.controlpanel.icon} title={windows.controlpanel.title} isOpen={windows.controlpanel.isOpen} isActive={activeWindowId === 'controlpanel'} zIndex={windows.controlpanel.z} defaultX={windowDefaults.controlpanel.x} defaultY={windowDefaults.controlpanel.y} defaultW={windowDefaults.controlpanel.w} defaultH={windowDefaults.controlpanel.h} onClose={() => closeWindow('controlpanel')} onFocus={() => focusWindow('controlpanel')}>
-        <ControlPanel aeroColor={aeroColor} setAeroColor={setAeroColor} wallpaper={wallpaper} setWallpaper={setWallpaper} />
+        <ControlPanel aeroColor={aeroColor} setAeroColor={setAeroColor} wallpaper={wallpaper} setWallpaper={setWallpaper} onOpenWindow={openWindow} onOpenPath={openPathInExplorer} />
       </RetroWindow>
 
       <RetroWindow id="terminal" icon={windows.terminal.icon} title={windows.terminal.title} isOpen={windows.terminal.isOpen} isActive={activeWindowId === 'terminal'} zIndex={windows.terminal.z} defaultX={windowDefaults.terminal.x} defaultY={windowDefaults.terminal.y} defaultW={windowDefaults.terminal.w} defaultH={windowDefaults.terminal.h} onClose={() => closeWindow('terminal')} onFocus={() => focusWindow('terminal')}>
@@ -248,6 +271,18 @@ export default function VistaShell() {
 
       <RetroWindow id="taskmanager" icon={windows.taskmanager.icon} title={windows.taskmanager.title} isOpen={windows.taskmanager.isOpen} isActive={activeWindowId === 'taskmanager'} zIndex={windows.taskmanager.z} defaultX={windowDefaults.taskmanager.x} defaultY={windowDefaults.taskmanager.y} defaultW={windowDefaults.taskmanager.w} defaultH={windowDefaults.taskmanager.h} onClose={() => closeWindow('taskmanager')} onFocus={() => focusWindow('taskmanager')}>
         <TaskManager windows={windows} onEndTask={(id: string) => closeWindow(id)} />
+      </RetroWindow>
+
+      <RetroWindow id="mail" icon={windows.mail.icon} title={windows.mail.title} isOpen={windows.mail.isOpen} isActive={activeWindowId === 'mail'} zIndex={windows.mail.z} defaultX={windowDefaults.mail.x} defaultY={windowDefaults.mail.y} defaultW={windowDefaults.mail.w} defaultH={windowDefaults.mail.h} onClose={() => closeWindow('mail')} onFocus={() => focusWindow('mail')}>
+        <MailWindow />
+      </RetroWindow>
+
+      <RetroWindow id="system" icon={windows.system.icon} title={windows.system.title} isOpen={windows.system.isOpen} isActive={activeWindowId === 'system'} zIndex={windows.system.z} defaultX={windowDefaults.system.x} defaultY={windowDefaults.system.y} defaultW={windowDefaults.system.w} defaultH={windowDefaults.system.h} onClose={() => closeWindow('system')} onFocus={() => focusWindow('system')}>
+        <SystemProperties userName={userName} onOpenWindow={openWindow} />
+      </RetroWindow>
+
+      <RetroWindow id="wei" icon={windows.wei.icon} title={windows.wei.title} isOpen={windows.wei.isOpen} isActive={activeWindowId === 'wei'} zIndex={windows.wei.z} defaultX={windowDefaults.wei.x} defaultY={windowDefaults.wei.y} defaultW={windowDefaults.wei.w} defaultH={windowDefaults.wei.h} onClose={() => closeWindow('wei')} onFocus={() => focusWindow('wei')}>
+        <WEI />
       </RetroWindow>
 
       {uac.active && uac.windowId && (

@@ -15,7 +15,7 @@ export async function sendEmail(data: { firstName: string; lastName: string; ema
 
   try {
     // Resend returns { data, error } instead of crashing
-    const { data: resendData, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: 'IrieOS Form <onboarding@resend.dev>', 
       to: 'irievosscontact@gmail.com',             
       subject: `New OS Message from ${data.firstName} ${data.lastName}`,
