@@ -43,7 +43,7 @@ export default function StartMenu({ isOpen, onToggleWindow, onOpenPath, onShowSh
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 18 }}
           transition={{ duration: 0.18 }}
-          className="fixed bottom-[46px] left-0 z-[140000] flex h-[560px] w-[460px] flex-col overflow-hidden rounded-tr-[18px] border-r border-t border-white/30 bg-[linear-gradient(180deg,rgba(34,54,85,0.9)_0%,rgba(7,11,18,0.96)_100%)] shadow-[0_26px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+          onClick={(event) => event.stopPropagation()} className="fixed bottom-[46px] left-0 z-[140000] flex h-[560px] w-[460px] flex-col overflow-hidden rounded-tr-[18px] border-r border-t border-white/30 bg-[linear-gradient(180deg,rgba(34,54,85,0.9)_0%,rgba(7,11,18,0.96)_100%)] shadow-[0_26px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
         >
           <div className="relative flex-1 overflow-hidden border-t border-white/10">
             <div className="absolute right-6 top-5 flex h-24 w-24 items-center justify-center rounded-[18px] border border-white/75 bg-[linear-gradient(180deg,#f9fdff_0%,#bfd9f6_100%)] text-5xl shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
