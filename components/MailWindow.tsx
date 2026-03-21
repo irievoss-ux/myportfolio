@@ -19,7 +19,8 @@ const sentEmails = [
 export default function MailWindow() {
   const [view, setView] = useState<View>('inbox');
   const [selectedEmail, setSelectedEmail] = useState<number | null>(null);
-  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'limit'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'limit' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   // The contact form fields
   const [firstName, setFirstName] = useState('');
@@ -38,7 +39,8 @@ export default function MailWindow() {
     } else if (result.error === 'RATE_LIMIT') {
       setStatus('limit');
     } else {
-      setStatus('idle');
+      setErrorMessage(result.error || 'SERVER_ERROR');
+      setStatus('error');
     }
   }
 
@@ -136,7 +138,7 @@ export default function MailWindow() {
             <ComposePane
               firstName={firstName} lastName={lastName} email={email} message={message}
               setFirstName={setFirstName} setLastName={setLastName} setEmail={setEmail} setMessage={setMessage}
-              status={status} onSend={handleSend} onCancel={() => setView('inbox')}
+              status={status} errorMessage={errorMessage} onSend={handleSend} onCancel={() => setView('inbox')}
             />
           ) : selectedMsg ? (
             /* Reading pane */
@@ -210,8 +212,8 @@ export default function MailWindow() {
 }
 
 // Compose pane component
-function ComposePane({ firstName, lastName, email, message, setFirstName, setLastName, setEmail, setMessage, status, onSend, onCancel }:
-  { firstName: string; lastName: string; email: string; message: string; setFirstName: (s: string) => void; setLastName: (s: string) => void; setEmail: (s: string) => void; setMessage: (s: string) => void; status: string; onSend: () => void; onCancel: () => void }) {
+function ComposePane({ firstName, lastName, email, message, setFirstName, setLastName, setEmail, setMessage, status, errorMessage, onSend, onCancel }:
+  { firstName: string; lastName: string; email: string; message: string; setFirstName: (s: string) => void; setLastName: (s: string) => void; setEmail: (s: string) => void; setMessage: (s: string) => void; status: string; errorMessage?: string; onSend: () => void; onCancel: () => void }) {
 
   if (status === 'success') {
     return (
@@ -229,6 +231,17 @@ function ComposePane({ firstName, lastName, email, message, setFirstName, setLas
         <svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#f44336" opacity="0.15"/><path d="M24 14v12M24 30v2" stroke="#d32f2f" strokeWidth="3" strokeLinecap="round"/></svg>
         <div className="mt-3 text-[14px] font-bold text-[#c62828]">Send Limit Reached</div>
         <div className="mt-1 text-[11px] text-slate-500">Maximum 2 messages per session. Try again later.</div>
+        <button type="button" onClick={onCancel} className="mt-4 rounded border border-[#7b9ec0] bg-[linear-gradient(180deg,#f8fbff_0%,#dbe8f4_100%)] px-4 py-1.5 text-[11px] font-medium text-[#1d5a8f]">Back to Inbox</button>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-[#fff8f0]">
+        <svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#f44336" opacity="0.15"/><path d="M24 14v12M24 30v2" stroke="#d32f2f" strokeWidth="3" strokeLinecap="round"/></svg>
+        <div className="mt-3 text-[14px] font-bold text-[#c62828]">Failed to Send</div>
+        <div className="mt-1 px-8 text-center text-[11px] text-slate-500 max-w-sm">{errorMessage || 'An unknown error occurred.'}</div>
         <button type="button" onClick={onCancel} className="mt-4 rounded border border-[#7b9ec0] bg-[linear-gradient(180deg,#f8fbff_0%,#dbe8f4_100%)] px-4 py-1.5 text-[11px] font-medium text-[#1d5a8f]">Back to Inbox</button>
       </div>
     );

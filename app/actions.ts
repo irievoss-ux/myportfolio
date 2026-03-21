@@ -26,7 +26,7 @@ export async function sendEmail(data: { firstName: string; lastName: string; ema
     // If Resend rejected it, catch it here!
     if (error) {
       console.error("RESEND API ERROR:", error);
-      return { success: false, error: "SERVER_ERROR" };
+      return { success: false, error: error.message || "SERVER_ERROR" };
     }
 
     cookieStore.set('irie_email_count', (count + 1).toString(), { maxAge: 60 * 60 * 24 });

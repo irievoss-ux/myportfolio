@@ -18,7 +18,7 @@ interface DragSource { pile: PileType; index: number; cardIndex: number; }
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 const suitColor = (s: Suit) => s === 'hearts' || s === 'diamonds' ? '#c0392b' : '#1a1a2e';
 const suitSymbol = (s: Suit) => ({ hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' }[s]);
-const valueName = (v: CardValue) => ({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' }[v] || String(v));
+const valueName = (v: CardValue) => (({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[v] || String(v));
 
 function createDeck(): Card[] {
   const deck: Card[] = [];
