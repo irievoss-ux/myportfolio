@@ -28,6 +28,7 @@ export default function VistaTaskbar({ windows, activeWindowId, aeroColor, onTog
   const [time, setTime] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
+  const [showNetwork, setShowNetwork] = useState(false);
   const [volume, setVolume] = useState(75);
 
   useEffect(() => {
@@ -87,9 +88,11 @@ export default function VistaTaskbar({ windows, activeWindowId, aeroColor, onTog
         <div className="flex h-full items-center gap-1">
           {/* System Tray */}
           <div className="relative flex h-full items-center gap-3 rounded-l-[8px] border-l border-white/10 bg-black/15 px-3 text-white">
-            <button type="button" className="opacity-70 hover:opacity-100 transition" title="Network: Connected">
-              <NetworkIcon size={14} />
-            </button>
+            <div className="relative">
+              <button type="button" onClick={() => { setShowNetwork(v => !v); setShowVolume(false); }} className="opacity-70 hover:opacity-100 transition" title="Network: Connected">
+                <NetworkIcon size={14} />
+              </button>
+            </div>
             <div className="relative">
               <button type="button" onClick={() => setShowVolume(v => !v)} className="opacity-70 hover:opacity-100 transition" title={`Volume: ${volume}%`}>
                 {volume === 0 ? <VolumeMuteIcon size={14} /> : <VolumeIcon size={14} />}
@@ -126,6 +129,48 @@ export default function VistaTaskbar({ windows, activeWindowId, aeroColor, onTog
           <div className="rounded-xl border border-white/25 bg-[rgba(15,25,45,0.95)] p-1 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
             <VistaCalendar />
             <button type="button" onClick={() => setShowCalendar(false)} className="mt-1 w-full rounded-b-lg px-3 py-1.5 text-center text-[10px] text-white/50 hover:bg-white/10 hover:text-white/80 transition">Close</button>
+          </div>
+        </div>
+      )}
+
+      {showNetwork && (
+        <div className="fixed bottom-[50px] right-16 z-[130000]" onClick={(e) => e.stopPropagation()}>
+          <div className="w-[260px] rounded-xl border border-white/25 bg-[rgba(15,25,45,0.95)] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl text-white">
+            <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40 mb-3">Network Connections</div>
+            {/* Connected network */}
+            <div className="flex items-center gap-3 rounded-lg bg-white/8 p-3 border border-white/10">
+              <NetworkIcon size={18} />
+              <div className="flex-1">
+                <div className="text-[12px] font-semibold">IrieNet</div>
+                <div className="text-[10px] text-green-400">Connected</div>
+              </div>
+              <div className="flex gap-[2px] items-end">
+                {[4, 7, 10, 14].map((h, i) => (
+                  <div key={i} className="w-[3px] rounded-full bg-green-400" style={{ height: h }} />
+                ))}
+              </div>
+            </div>
+            {/* Other networks */}
+            <div className="mt-3 space-y-1">
+              {[
+                { name: 'NETGEAR-5G', strength: 3 },
+                { name: 'linksys', strength: 2 },
+                { name: 'xfinitywifi', strength: 1 },
+              ].map(net => (
+                <div key={net.name} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/8 transition cursor-pointer">
+                  <NetworkIcon size={14} className="opacity-50" />
+                  <div className="flex-1">
+                    <div className="text-[11px] text-white/70">{net.name}</div>
+                  </div>
+                  <div className="flex gap-[2px] items-end">
+                    {[4, 7, 10, 14].map((h, i) => (
+                      <div key={i} className={`w-[3px] rounded-full ${i < net.strength ? 'bg-white/50' : 'bg-white/15'}`} style={{ height: h }} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={() => setShowNetwork(false)} className="mt-3 w-full rounded-lg px-3 py-1.5 text-center text-[10px] text-white/50 hover:bg-white/10 hover:text-white/80 transition">Close</button>
           </div>
         </div>
       )}

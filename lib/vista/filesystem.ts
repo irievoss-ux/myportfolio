@@ -587,6 +587,14 @@ export function createVistaFileSystem(accountFolder: string): VistaFolderNode {
           },
         ],
       },
+      {
+        name: 'Recycle Bin',
+        type: 'folder',
+        icon: '🗑️',
+        description: 'Recycle Bin is empty.',
+        modified: stamp,
+        children: [],
+      },
     ],
   };
 }

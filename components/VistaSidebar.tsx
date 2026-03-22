@@ -7,9 +7,11 @@ export default function VistaSidebar() {
 
 
   return (
-    <aside className="fixed right-0 top-0 z-[15] flex h-[calc(100%-46px)] w-[170px] flex-col items-center gap-4 border-l border-white/12 bg-[linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.04)_30%,rgba(0,0,0,0.14))] px-3 py-4 backdrop-blur-md">
+    <aside className="fixed right-0 top-0 z-[15] flex h-[calc(100%-46px)] w-[170px] flex-col items-center gap-4 border-l border-white/12 bg-[linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.04)_30%,rgba(0,0,0,0.14))] px-3 py-4 backdrop-blur-md overflow-y-auto">
       {/* Analog Clock Gadget */}
       <AnalogClockGadget />
+      {/* Music Player Gadget */}
+      <MusicGadget />
       {/* Slideshow / Picture gadget */}
       <PictureGadget />
       {/* CPU Meter Gadget */}
@@ -212,3 +214,121 @@ function MiniGauge({ value, label, color }: { value: number; label: string; colo
     </div>
   );
 }
+
+const PLAYLIST = [
+  { title: 'Decode', src: '/media/Decode.mp3' },
+  { title: 'Leave Out All The Rest', src: '/media/Leave-Out-All-The-Rest.mp3' },
+  { title: 'Let Me', src: '/media/Let-Me.mp3' },
+  { title: 'Ohio Is For Lovers', src: '/media/Ohio-Is-For-Lovers.mp3' },
+  { title: 'When Your Heart Stops Beating', src: '/media/When-Your-Heart-Stops-Beating.mp3' },
+];
+
+function MusicGadget() {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const track = PLAYLIST[trackIndex];
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onTime = () => {
+      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100);
+    };
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => {
+      setTrackIndex((i) => (i + 1) % PLAYLIST.length);
+    };
+
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, [trackIndex]);
+
+  // Auto-play on track change when playing
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.src = track.src;
+    if (playing) {
+      void audio.play().catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackIndex]);
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      void audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  };
+
+  const prevTrack = () => {
+    setProgress(0);
+    setTrackIndex((i) => (i - 1 + PLAYLIST.length) % PLAYLIST.length);
+  };
+
+  const nextTrack = () => {
+    setProgress(0);
+    setTrackIndex((i) => (i + 1) % PLAYLIST.length);
+  };
+
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = pct * audio.duration;
+  };
+
+  return (
+    <div className="gadget-panel flex w-[144px] flex-col items-center gap-2 rounded-[12px] border border-white/20 bg-black/15 p-3 shadow-[0_4px_15px_rgba(0,0,0,0.2)] backdrop-blur-xl">
+      <audio ref={audioRef} preload="metadata" />
+      <div className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">♫ Music</div>
+
+      {/* Track name — scrolling */}
+      <div className="w-full overflow-hidden">
+        <div className="whitespace-nowrap text-center text-[10px] font-medium text-white/80 animate-marquee">
+          {track.title}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-[4px] w-full cursor-pointer overflow-hidden rounded-full bg-black/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]" onClick={seek}>
+        <div className="h-full rounded-full bg-[linear-gradient(90deg,#52c5ff,#d8fbff)] shadow-[0_0_8px_rgba(91,218,255,0.6)] transition-all duration-200" style={{ width: `${progress}%` }} />
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={prevTrack} className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] text-white/60 hover:text-white hover:bg-white/10 transition" title="Previous">
+          ⏮
+        </button>
+        <button type="button" onClick={togglePlay} className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-100/30 bg-[linear-gradient(180deg,rgba(92,184,255,0.3),rgba(13,92,160,0.3))] text-[12px] text-white shadow-[0_0_12px_rgba(72,175,255,0.3)] hover:brightness-125 transition" title={playing ? 'Pause' : 'Play'}>
+          {playing ? '⏸' : '▶'}
+        </button>
+        <button type="button" onClick={nextTrack} className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] text-white/60 hover:text-white hover:bg-white/10 transition" title="Next">
+          ⏭
+        </button>
+      </div>
+
+      {/* Track number */}
+      <div className="text-[8px] text-white/30">{trackIndex + 1} / {PLAYLIST.length}</div>
+    </div>
+  );
+}
+

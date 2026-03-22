@@ -1,12 +1,16 @@
 "use client";
 
+import VistaIcon from '@/components/VistaIconMap';
+
 interface RightClickMenuProps {
   isOpen: boolean;
   x: number;
   y: number;
+  target: { type: 'desktop' } | { type: 'icon'; label: string; id?: string; iconKey: string };
   onClose: () => void;
   onPersonalize: () => void;
   onTaskManager: () => void;
+  onOpenTarget: () => void;
   desktopViewMode: 'large' | 'medium' | 'small';
   setDesktopViewMode: (mode: 'large' | 'medium' | 'small') => void;
 }
@@ -19,7 +23,7 @@ function MenuIcon({ d, size = 14 }: { d: string; size?: number }) {
   );
 }
 
-export default function RightClickMenu({ isOpen, x, y, onClose, onPersonalize, onTaskManager, desktopViewMode, setDesktopViewMode }: RightClickMenuProps) {
+export default function RightClickMenu({ isOpen, x, y, target, onClose, onPersonalize, onTaskManager, onOpenTarget, desktopViewMode, setDesktopViewMode }: RightClickMenuProps) {
   if (!isOpen) return null;
 
   const runAndClose = (action: () => void) => {
@@ -27,11 +31,68 @@ export default function RightClickMenu({ isOpen, x, y, onClose, onPersonalize, o
     onClose();
   };
 
+  const isIcon = target.type === 'icon';
+
   const menuWidth = 230;
-  const menuHeight = 340;
+  const menuHeight = isIcon ? 220 : 340;
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
+  // Icon-specific right-click menu
+  if (isIcon) {
+    return (
+      <div
+        className="fixed z-[10000] overflow-hidden rounded-[6px] border border-[#a8b8c8]/80 bg-[linear-gradient(180deg,#f8fbff_0%,#edf3fa_100%)] font-sans text-xs shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+        style={{ top: adjustedY, left: adjustedX, width: menuWidth }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header with icon */}
+        <div className="flex items-center gap-2 border-b border-[#d8e2ec] px-3 py-2">
+          <VistaIcon name={target.iconKey} size={16} />
+          <span className="font-semibold text-slate-700">{target.label}</span>
+        </div>
+
+        {/* Open */}
+        <div className="border-b border-[#d8e2ec] py-1">
+          <button type="button" onClick={() => runAndClose(onOpenTarget)} className="flex w-full items-center gap-3 px-8 py-1.5 text-left font-bold text-slate-700 hover:bg-[#d6e8fc]">
+            <MenuIcon d="M2 4h12v8H2zM6 8l4-2v4z" />Open
+          </button>
+        </div>
+
+        {/* Cut/Copy/Paste — disabled style */}
+        <div className="border-b border-[#d8e2ec] py-1">
+          <button type="button" disabled className="flex w-full items-center gap-3 px-8 py-1.5 text-left text-slate-400 cursor-default">
+            <MenuIcon d="M4 2v12M8 4h4M8 8h3" />Cut
+          </button>
+          <button type="button" disabled className="flex w-full items-center gap-3 px-8 py-1.5 text-left text-slate-400 cursor-default">
+            <MenuIcon d="M4 2h6v10H4zM6 4h8v10H6z" />Copy
+          </button>
+        </div>
+
+        {/* Create Shortcut / Delete / Rename — disabled */}
+        <div className="border-b border-[#d8e2ec] py-1">
+          <button type="button" disabled className="flex w-full items-center gap-3 px-8 py-1.5 text-left text-slate-400 cursor-default">
+            <MenuIcon d="M4 2h8l-4 12H0z" />Create Shortcut
+          </button>
+          <button type="button" disabled className="flex w-full items-center gap-3 px-8 py-1.5 text-left text-slate-400 cursor-default">
+            <MenuIcon d="M5 4l6 8M11 4l-6 8" />Delete
+          </button>
+          <button type="button" disabled className="flex w-full items-center gap-3 px-8 py-1.5 text-left text-slate-400 cursor-default">
+            <MenuIcon d="M2 12h12M6 4l2-2 2 2M4 8h8" />Rename
+          </button>
+        </div>
+
+        {/* Properties */}
+        <div className="py-1">
+          <button type="button" onClick={() => runAndClose(() => {})} className="flex w-full items-center gap-3 px-8 py-1.5 text-left text-slate-700 hover:bg-[#d6e8fc]">
+            <MenuIcon d="M8 2a6 6 0 100 12 6 6 0 000-12zM8 6v3M8 11v0.5" />Properties
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop right-click menu
   return (
     <div
       className="fixed z-[10000] overflow-hidden rounded-[6px] border border-[#a8b8c8]/80 bg-[linear-gradient(180deg,#f8fbff_0%,#edf3fa_100%)] font-sans text-xs shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"

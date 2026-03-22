@@ -44,7 +44,10 @@ const allProgramsTree: { label: string; iconKey: string; id?: string; children?:
   },
   {
     label: 'Games', iconKey: 'folder-small', children: [
+      { label: 'Chess Titans', iconKey: 'chesstitans', id: 'chesstitans' },
       { label: 'Minesweeper', iconKey: 'minesweeper', id: 'minesweeper' },
+      { label: 'Purble Place', iconKey: 'purbleplace', id: 'purbleplace' },
+      { label: 'Solitaire', iconKey: 'solitaire', id: 'solitaire' },
     ]
   },
   {

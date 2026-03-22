@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ControlPanel from '@/components/ControlPanel';
 import FileExplorer from '@/components/FileExplorer';
 import LoginScreen from '@/components/LoginScreen';
@@ -62,6 +62,7 @@ const windowBlueprints: Record<string, Omit<WindowState, 'isOpen' | 'isMinimized
   solitaire: { title: 'Solitaire', iconKey: 'solitaire' },
   purbleplace: { title: 'Purble Place', iconKey: 'purbleplace' },
   chesstitans: { title: 'Chess Titans', iconKey: 'chesstitans' },
+  recyclebin: { title: 'Recycle Bin', iconKey: 'recyclebin' },
 };
 
 const windowDefaults: Record<string, { x: number; y: number; w: number; h: number }> = {
@@ -82,19 +83,28 @@ const windowDefaults: Record<string, { x: number; y: number; w: number; h: numbe
   solitaire: { x: 260, y: 100, w: 720, h: 560 },
   purbleplace: { x: 300, y: 120, w: 680, h: 580 },
   chesstitans: { x: 280, y: 110, w: 700, h: 620 },
+  recyclebin: { x: 200, y: 100, w: 800, h: 560 },
 };
 
-const desktopIcons = [
-  { id: 'computer', label: 'Computer', iconKey: 'computer', kind: 'window' as const },
-  { id: 'browser', label: 'Internet Explorer', iconKey: 'ie', kind: 'window' as const },
-  { label: 'Recycle Bin', iconKey: 'recyclebin', kind: 'static' as const },
-  { id: 'notepad', label: 'Notepad', iconKey: 'notepad', kind: 'window' as const },
-  { id: 'calculator', label: 'Calculator', iconKey: 'calculator', kind: 'window' as const },
-  { id: 'paint', label: 'Paint', iconKey: 'paint', kind: 'window' as const },
-  { id: 'controlpanel', label: 'Control Panel', iconKey: 'controlpanel', kind: 'window' as const },
-  { id: 'mail', label: 'Windows Mail', iconKey: 'mail', kind: 'window' as const },
-  { label: 'Games', iconKey: 'games', kind: 'path' as const, path: ['Computer', 'OSDisk (C:)', 'Users', 'Irie', 'Games'] },
-  { label: 'Documents', iconKey: 'folder-documents', kind: 'path' as const, path: ['Computer', 'OSDisk (C:)', 'Users', 'Irie', 'Documents'] },
+interface DesktopIconDef {
+  id?: string;
+  label: string;
+  iconKey: string;
+  kind: 'window' | 'path' | 'static';
+  path?: string[];
+}
+
+const defaultDesktopIcons: DesktopIconDef[] = [
+  { id: 'computer', label: 'Computer', iconKey: 'computer', kind: 'window' },
+  { id: 'browser', label: 'Internet Explorer', iconKey: 'ie', kind: 'window' },
+  { id: 'recyclebin', label: 'Recycle Bin', iconKey: 'recyclebin', kind: 'path', path: ['Computer', 'Recycle Bin'] },
+  { id: 'notepad', label: 'Notepad', iconKey: 'notepad', kind: 'window' },
+  { id: 'calculator', label: 'Calculator', iconKey: 'calculator', kind: 'window' },
+  { id: 'paint', label: 'Paint', iconKey: 'paint', kind: 'window' },
+  { id: 'controlpanel', label: 'Control Panel', iconKey: 'controlpanel', kind: 'window' },
+  { id: 'mail', label: 'Windows Mail', iconKey: 'mail', kind: 'window' },
+  { label: 'Games', iconKey: 'games', kind: 'path', path: ['Computer', 'OSDisk (C:)', 'Users', 'Irie', 'Games'] },
+  { label: 'Documents', iconKey: 'folder-documents', kind: 'path', path: ['Computer', 'OSDisk (C:)', 'Users', 'Irie', 'Documents'] },
 ];
 
 function createInitialWindows(): Record<string, WindowState> {
@@ -121,8 +131,17 @@ export default function VistaShell() {
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
   const [nextZ, setNextZ] = useState(200);
   const [uac, setUac] = useState<{ active: boolean; windowId: string | null }>({ active: false, windowId: null });
-  const [contextMenu, setContextMenu] = useState({ isOpen: false, x: 0, y: 0 });
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean; x: number; y: number;
+    target: { type: 'desktop' } | { type: 'icon'; label: string; id?: string; iconKey: string };
+  }>({ isOpen: false, x: 0, y: 0, target: { type: 'desktop' } });
   const [desktopViewMode, setDesktopViewMode] = useState<'large' | 'medium' | 'small'>('large');
+
+  // Draggable desktop icon positions
+  const [iconPositions, setIconPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const dragRef = useRef<{ key: string; startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const clickPreventRef = useRef(false);
 
   // Keyboard shortcuts
   const handleKeyboard = useCallback((e: KeyboardEvent) => {
@@ -278,8 +297,18 @@ export default function VistaShell() {
   return (
     <main className="fixed inset-0 overflow-hidden select-none font-sans vista-cursor-default"
       style={{ background: backgrounds[wallpaper] }}
-      onContextMenu={(e) => { e.preventDefault(); if (uac.active) return; setContextMenu({ isOpen: true, x: e.clientX, y: e.clientY }); }}
-      onClick={() => { setContextMenu((c) => ({ ...c, isOpen: false })); setStartOpen(false); }}>
+      onContextMenu={(e) => { e.preventDefault(); if (uac.active) return; setContextMenu({ isOpen: true, x: e.clientX, y: e.clientY, target: { type: 'desktop' } }); }}
+      onClick={() => { setContextMenu((c) => ({ ...c, isOpen: false })); setStartOpen(false); }}
+      onMouseMove={(e) => {
+        if (!dragRef.current) return;
+        if (!dragging) setDragging(true);
+        clickPreventRef.current = true;
+        const { key, startX, startY, originX, originY } = dragRef.current;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        setIconPositions((p) => ({ ...p, [key]: { x: originX + dx, y: originY + dy } }));
+      }}
+      onMouseUp={() => { dragRef.current = null; setDragging(false); setTimeout(() => { clickPreventRef.current = false; }, 0); }}>
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.28),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0)_40%,rgba(0,0,0,0.12))]" />
       <div className={`pointer-events-none absolute inset-0 transition duration-700 ${aeroColor === 'ruby' ? 'bg-red-500/12' : aeroColor === 'emerald' ? 'bg-emerald-400/12' : aeroColor === 'graphite' ? 'bg-slate-600/18' : aeroColor === 'amber' ? 'bg-amber-500/12' : aeroColor === 'violet' ? 'bg-violet-500/12' : 'bg-cyan-300/10'}`} />
@@ -288,21 +317,33 @@ export default function VistaShell() {
       <VistaSidebar />
       <StickyNotes />
 
-      {/* Desktop Icons Grid */}
-      <div className="relative z-10 flex h-full w-full items-start p-5 pb-20 pr-[200px]">
-        <div className="grid auto-rows-max grid-cols-1 gap-4" style={{ gridAutoFlow: 'column', gridTemplateRows: `repeat(auto-fill, minmax(${desktopViewMode === 'large' ? '100px' : '70px'}, 1fr))`, maxHeight: 'calc(100vh - 120px)' }}>
-          {desktopIcons.map((s) => (
-            <button key={s.label} type="button"
-              onDoubleClick={() => { if (s.kind === 'window' && s.id) openWindow(s.id); else if (s.kind === 'path' && s.path) openPathInExplorer(s.path as VistaPath); }}
+      {/* Desktop Icons — draggable */}
+      <div className="relative z-10 h-full w-full pb-20 pr-[200px]">
+        {defaultDesktopIcons.map((s, idx) => {
+          const key = s.id || s.label;
+          const defaultCol = Math.floor(idx / 6);
+          const defaultRow = idx % 6;
+          const spacing = desktopViewMode === 'large' ? 105 : 75;
+          const colW = desktopViewMode === 'large' ? 94 : 68;
+          const pos = iconPositions[key] ?? { x: 20 + defaultCol * colW, y: 20 + defaultRow * spacing };
+          return (
+            <button key={key} type="button"
+              style={{ position: 'absolute', left: pos.x, top: pos.y }}
+              onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                dragRef.current = { key, startX: e.clientX, startY: e.clientY, originX: pos.x, originY: pos.y };
+              }}
+              onDoubleClick={() => { if (clickPreventRef.current) return; if (s.kind === 'window' && s.id) openWindow(s.id); else if (s.kind === 'path' && s.path) openPathInExplorer(s.path as VistaPath); }}
               onClick={(e) => e.stopPropagation()}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); if (uac.active) return; setContextMenu({ isOpen: true, x: e.clientX, y: e.clientY, target: { type: 'icon', label: s.label, id: s.id, iconKey: s.iconKey } }); }}
               className={`group flex ${iconWrapClass} flex-col items-center gap-1.5 rounded-[14px] px-2 py-1 text-center hover:bg-white/10`}>
               <div className={`flex ${iconBoxClass} items-center justify-center border border-white/15 bg-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.18)] backdrop-blur-sm transition group-hover:scale-105`}>
                 <VistaIcon name={s.iconKey} size={iconSize} />
               </div>
               <span className={`rounded px-1 ${iconLabelClass} font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]`}>{s.label}</span>
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {/* All windows */}
@@ -323,6 +364,7 @@ export default function VistaShell() {
       {renderWin('wei', <WEI />)}
       {renderWin('calculator', <Calculator />)}
       {renderWin('paint', <Paint />)}
+      {renderWin('recyclebin', <FileExplorer path={['Computer', 'Recycle Bin']} setPath={setExplorerPath} onOpenNode={handleOpenNode} />)}
 
       {uac.active && uac.windowId && (
         <>
@@ -336,7 +378,7 @@ export default function VistaShell() {
 
       <StartMenu isOpen={startOpen} onToggleWindow={openWindow} onOpenPath={openPathInExplorer} onShowShutdown={() => { setShowShutdown(true); setStartOpen(false); }} onShowRun={() => { setShowRun(true); setStartOpen(false); }} />
       <VistaTaskbar windows={windows} activeWindowId={activeWindowId} aeroColor={aeroColor} onToggleStart={() => setStartOpen((c) => !c)} onFocusWindow={focusWindow} onMinimizeWindow={minimizeWindow} onRestoreWindow={restoreWindow} onShowDesktop={showDesktop} />
-      <RightClickMenu isOpen={contextMenu.isOpen} x={contextMenu.x} y={contextMenu.y} onClose={() => setContextMenu((c) => ({ ...c, isOpen: false }))} onPersonalize={() => openWindow('controlpanel')} onTaskManager={() => openWindow('taskmanager')} desktopViewMode={desktopViewMode} setDesktopViewMode={setDesktopViewMode} />
+      <RightClickMenu isOpen={contextMenu.isOpen} x={contextMenu.x} y={contextMenu.y} target={contextMenu.target} onClose={() => setContextMenu((c) => ({ ...c, isOpen: false }))} onPersonalize={() => openWindow('controlpanel')} onTaskManager={() => openWindow('taskmanager')} onOpenTarget={() => { const t = contextMenu.target; if (t.type === 'icon') { if (t.id && windows[t.id]) openWindow(t.id); const ico = defaultDesktopIcons.find(i => i.label === t.label); if (ico?.kind === 'path' && ico.path) openPathInExplorer(ico.path as VistaPath); } }} desktopViewMode={desktopViewMode} setDesktopViewMode={setDesktopViewMode} />
     </main>
   );
 }
