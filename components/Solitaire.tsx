@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 // Card types
 type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
@@ -164,6 +164,81 @@ export default function Solitaire() {
     });
   };
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, pile: PileType, pileIndex: number, cardIndex: number) => {
+    e.dataTransfer.setData('application/json', JSON.stringify({ pile, index: pileIndex, cardIndex }));
+    e.dataTransfer.effectAllowed = 'move';
+    setSelected({ pile, index: pileIndex, cardIndex });
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetPile: PileType, targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const data = e.dataTransfer.getData('application/json');
+      if (!data) return;
+      const source: DragSource = JSON.parse(data);
+      if (!source) return;
+      
+      setGame(g => {
+        const newGame = { ...g, stock: [...g.stock], waste: [...g.waste], foundations: g.foundations.map(f => [...f]), tableau: g.tableau.map(t => [...t]) };
+
+        let sourceCards: Card[] = [];
+        if (source.pile === 'waste') {
+          if (newGame.waste.length === 0) return g;
+          sourceCards = [newGame.waste[newGame.waste.length - 1]];
+        } else if (source.pile === 'tableau') {
+          if (newGame.tableau[source.index].length <= source.cardIndex) return g;
+          sourceCards = newGame.tableau[source.index].slice(source.cardIndex);
+        } else if (source.pile === 'foundation') {
+          if (newGame.foundations[source.index].length === 0) return g;
+          sourceCards = [newGame.foundations[source.index][newGame.foundations[source.index].length - 1]];
+        }
+
+        if (sourceCards.length === 0) { setSelected(null); return g; }
+
+        let success = false;
+        if (targetPile === 'foundation' && sourceCards.length === 1) {
+          if (canPlaceOnFoundation(sourceCards[0], newGame.foundations[targetIndex])) {
+            newGame.foundations[targetIndex].push(sourceCards[0]);
+            success = true;
+          }
+        } else if (targetPile === 'tableau') {
+          if (source.pile === 'tableau' && source.index === targetIndex) {
+            setSelected(null);
+            return g;
+          }
+          if (canPlaceOnTableau(sourceCards[0], newGame.tableau[targetIndex])) {
+            newGame.tableau[targetIndex].push(...sourceCards);
+            success = true;
+          }
+        }
+
+        if (success) {
+          if (source.pile === 'waste') {
+            newGame.waste.pop();
+          } else if (source.pile === 'foundation') {
+            newGame.foundations[source.index].pop();
+          } else if (source.pile === 'tableau') {
+            newGame.tableau[source.index] = newGame.tableau[source.index].slice(0, source.cardIndex);
+            const tab = newGame.tableau[source.index];
+            if (tab.length > 0 && !tab[tab.length - 1].faceUp) {
+              tab[tab.length - 1] = { ...tab[tab.length - 1], faceUp: true };
+            }
+          }
+          newGame.moves += 1;
+          newGame.score += targetPile === 'foundation' ? 10 : 5;
+          setSelected(null);
+          return newGame;
+        }
+
+        setSelected(null);
+        return g;
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Auto-send to foundation on double-click
   const autoFoundation = (card: Card, sourcePile: PileType, sourceIndex: number) => {
     setSelected(null);
@@ -222,7 +297,9 @@ export default function Solitaire() {
           </div>
           {/* Waste */}
           <div onClick={() => game.waste.length > 0 && handleSelect('waste', 0, 0)}
-            onDoubleClick={() => game.waste.length > 0 && autoFoundation(game.waste[game.waste.length - 1], 'waste', 0)}>
+            onDoubleClick={() => game.waste.length > 0 && autoFoundation(game.waste[game.waste.length - 1], 'waste', 0)}
+            draggable={game.waste.length > 0}
+            onDragStart={(e) => game.waste.length > 0 && handleDragStart(e, 'waste', 0, 0)}>
             {game.waste.length > 0 ? (
               <CardFace card={game.waste[game.waste.length - 1]}
                 isSelected={selected?.pile === 'waste'} />
@@ -231,7 +308,11 @@ export default function Solitaire() {
           <div className="w-[66px]" /> {/* spacer */}
           {/* Foundations */}
           {game.foundations.map((f, fi) => (
-            <div key={fi} onClick={() => handleSelect('foundation', fi, 0)}>
+            <div key={fi} onClick={() => handleSelect('foundation', fi, 0)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDrop(e, 'foundation', fi)}
+              draggable={f.length > 0}
+              onDragStart={(e) => f.length > 0 && handleDragStart(e, 'foundation', fi, 0)}>
               {f.length > 0 ? <CardFace card={f[f.length - 1]} isSelected={selected?.pile === 'foundation' && selected.index === fi} /> : <EmptyPile label={suitSymbol(SUITS[fi])} />}
             </div>
           ))}
@@ -243,14 +324,18 @@ export default function Solitaire() {
             const offsets = getTableauOffsets(pile);
             const colHeight = pile.length === 0 ? 90 : offsets[pile.length - 1] + 90;
             return (
-            <div key={ti} className="relative" style={{ width: 66, height: colHeight, minHeight: 90 }}>
+            <div key={ti} className="relative" style={{ width: 66, height: colHeight, minHeight: 90 }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDrop(e, 'tableau', ti)}>
               {pile.length === 0 ? (
                 <div onClick={() => handleSelect('tableau', ti, 0)} className="w-[66px] h-[90px]"><EmptyPile /></div>
               ) : (
                 pile.map((card, ci) => (
                   <div key={card.id} className="absolute left-0" style={{ top: offsets[ci] }}
                     onClick={() => card.faceUp && handleSelect('tableau', ti, ci)}
-                    onDoubleClick={() => card.faceUp && ci === pile.length - 1 && autoFoundation(card, 'tableau', ti)}>
+                    onDoubleClick={() => card.faceUp && ci === pile.length - 1 && autoFoundation(card, 'tableau', ti)}
+                    draggable={card.faceUp}
+                    onDragStart={(e) => card.faceUp && handleDragStart(e, 'tableau', ti, ci)}>
                     {card.faceUp ? (
                       <CardFace card={card}
                         isSelected={selected?.pile === 'tableau' && selected.index === ti && selected.cardIndex <= ci} />
