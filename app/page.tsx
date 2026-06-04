@@ -1,10 +1,5 @@
-import VistaShell from '@/components/VistaShell';
-import { VistaProfileProvider } from '@/components/providers/VistaProfileProvider';
+import OSRoot from "@/components/irieos/OSRoot";
 
 export default function Page() {
-  return (
-    <VistaProfileProvider>
-      <VistaShell />
-    </VistaProfileProvider>
-  );
+  return <OSRoot />;
 }
